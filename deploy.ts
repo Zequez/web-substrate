@@ -1,8 +1,6 @@
 import chalk from 'chalk'
-// async run(cmd: string) {
-//   await Bun.$`bun run ${cmd}`
-// }
 
+await Bun.$`bun run build`
 await Bun.$`cp CNAME dist/CNAME`
 await Bun.$`cd dist && git init`
 await Bun.$`cd dist && git add .`

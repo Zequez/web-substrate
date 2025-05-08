@@ -1,4 +1,8 @@
-# a-web-oss
+# Web Substrate Experiment
+
+A canvas-based web building system.
+
+## Usage
 
 To install dependencies:
 
@@ -9,7 +13,10 @@ bun install
 To run:
 
 ```bash
-bun run index.ts
+bun run .
 ```
 
-This project was created using `bun init` in bun v1.1.29. [Bun](https://bun.sh) is a fast all-in-one JavaScript runtime.
+To build and deploy to gh-pages branch:
+
+```bash
+bun run ./deploy.ts

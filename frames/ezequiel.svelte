@@ -5,7 +5,7 @@
 <div class="rounded-md overflow-hidden relative h-full w-full">
   <img
     class="w-full h-full object-cover"
-    src="/public/ezequiel.jpg"
+    src="/images/ezequiel.jpg"
     alt="Ezequiel on the park smiling"
     draggable="false"
   />

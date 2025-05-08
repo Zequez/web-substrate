@@ -4,14 +4,49 @@
   import SS from "../store/store.svelte.ts";
   import Viewport from "./Viewport.svelte";
   import GridDisplay from "./GridDisplay.svelte";
+  import Links from "../frames/links.svelte";
+  import LinksMeta from "../frames/links.meta.json";
   import Ezequiel from "../frames/ezequiel.svelte";
   import EzequielMeta from "../frames/ezequiel.meta.json";
+
+  const framesComponents = import.meta.glob("../frames/*.svelte");
+  const framesMeta = import.meta.glob("../frames/*.meta.json");
+
+  type Components = {
+    [key: string]: {
+      meta: { x: number; y: number; w: number; h: number };
+      Component: any;
+    };
+  };
+
+  let components = $state<Components>({});
+
+  const loadComponents = async () => {
+    const comps: Components = {};
+    for (const path in framesComponents) {
+      const name = path.split("/").pop()!.split(".")[0]; // Extract component name (e.g., "ezequiel", "links")
+      const componentModule = (await framesComponents[path]()) as any; // Import the Svelte component
+      comps[name!] = {
+        Component: componentModule.default,
+        meta: null!,
+      };
+    }
+
+    for (const path in framesMeta) {
+      const name = path.split("/").pop()!.split(".")[0]; // Extract meta file name
+      const metaModule = (await framesMeta[path]()) as any; // Import the meta JSON
+      comps[name!].meta = metaModule.default;
+    }
+
+    components = comps;
+  };
 
   SS.createStoreContext();
   const S = SS.store;
 
-  onMount(() => {
+  onMount(async () => {
     S.cmd("ping");
+    await loadComponents();
   });
 </script>
 
@@ -22,9 +57,11 @@
   color={"#fff"}
 />
 <Viewport viewportContext={{ depth: 0, parentPos: { x: 0, y: 0, z: 1 } }}>
-  <div style={S.space.boxStyle(EzequielMeta)} class="bg-white rounded-md">
-    <Ezequiel />
-  </div>
+  {#each Object.entries(components) as [name, { meta, Component }] (name)}
+    <div style={S.space.boxStyle(meta)} class="absolute">
+      <Component />
+    </div>
+  {/each}
   <!-- {#each Object.entries(S.frames) as [uuid, frame] (uuid)}
     {@const resolvedBox =
       S.dragState.type === "moveFrame" && S.dragState.uuid === uuid
