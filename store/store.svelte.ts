@@ -23,7 +23,7 @@ function createStore(...storeConfig: StoreConfig) {
   // )
 
   $effect(() => {
-    localStorage.setItem('frames', JSON.stringify(frames))
+    // localStorage.setItem('frames', JSON.stringify(frames))
   })
 
   onMount(async () => {
