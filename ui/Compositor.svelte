@@ -1,41 +1,46 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-  import cx from "classnames";
-  import SS from "../store/store.svelte.ts";
-  import Viewport from "./Viewport.svelte";
-  import GridDisplay from "./GridDisplay.svelte";
-  import Frame from "./Frame.svelte";
-  import CreatingFrame from "./CreatingFrame.svelte";
+  import { onMount } from 'svelte'
+  import cx from 'classnames'
+  import SS from '../store/store.svelte.ts'
+  import Viewport from './Viewport.svelte'
+  import GridDisplay from './GridDisplay.svelte'
+  import Frame from './Frame.svelte'
+  import CreatingFrame from './CreatingFrame.svelte'
 
-  SS.createStoreContext();
-  const S = SS.store;
+  SS.createStoreContext()
+  const S = SS.store
 
   onMount(async () => {
     if (import.meta.env.DEV) {
-      S.cmd("ping");
+      S.cmd('ping')
     }
-  });
+  })
 
   $effect(() => {
     if (S.dragState) {
-      document.body.classList.add("select-none");
+      document.body.classList.add('select-none')
     } else {
-      document.body.classList.remove("select-none");
+      document.body.classList.remove('select-none')
     }
-  });
+  })
 </script>
 
 <GridDisplay
   pos={S.space.pos}
   vp={S.space.vp}
   size={S.space.grid.size}
-  color={"#fff"}
+  color={'#fff'}
 />
+{#if S.dragState.type === 'moveFrame'}
+  <div
+    class="absolute bottom-0 right-0 rounded-tl-lg h[100px] w[100px] bg-red z-100 pointer-events-none"
+  ></div>
+{/if}
 <Viewport viewportContext={{ depth: 0, parentPos: { x: 0, y: 0, z: 1 } }}>
   {#each Object.entries(S.framesComponents) as [name, { meta, Component }] (name)}
     <Frame {name} {Component} {meta} />
   {/each}
-  {#if S.dragState.type === "createFrame"}
+  {#if S.dragState.type === 'createFrame'}
     {#if S.dragState.resultingBox.w >= 3 && S.dragState.resultingBox.h >= 3}
       <div
         class="absolute bg-white/50 rounded-md b-3 b-blue-100"

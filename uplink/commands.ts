@@ -4,6 +4,7 @@ import {
   stat,
   rename as fsRename,
   mkdir,
+  rm as fsRemove,
 } from 'fs/promises'
 import { join } from 'path'
 
@@ -153,6 +154,17 @@ async function createFrameComponent(
   return true
 }
 
+async function removeFrameComponent(name: string) {
+  const framesDir = 'frames'
+  const sveltePath = join(framesDir, `${name}.svelte`)
+  const metaPath = join(framesDir, `${name}.meta.json`)
+
+  await fsRemove(sveltePath)
+  await fsRemove(metaPath)
+
+  return true
+}
+
 export const cmds = {
   ping,
   filesList,
@@ -160,6 +172,7 @@ export const cmds = {
   writeFile,
   renameFrameComponent,
   createFrameComponent,
+  removeFrameComponent,
 }
 
 export type UplinkCmd =
@@ -169,6 +182,7 @@ export type UplinkCmd =
   | ['writeFile', ...Parameters<typeof writeFile>]
   | ['renameFrameComponent', ...Parameters<typeof renameFrameComponent>]
   | ['createFrameComponent', ...Parameters<typeof createFrameComponent>]
+  | ['removeFrameComponent', ...Parameters<typeof removeFrameComponent>]
 
 export type UplinkReturn<T extends UplinkCmd> = T extends [
   infer K extends keyof typeof cmds,

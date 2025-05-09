@@ -225,9 +225,16 @@ function createStore(...storeConfig: StoreConfig) {
             break
           }
           case 'moveFrame': {
-            framesComponents.updateMeta(dragState.name, {
-              box: dragState.resultingBox,
-            })
+            if (
+              space.vp.screenW - ev.clientX <= 100 &&
+              space.vp.screenH - ev.clientY <= 100
+            ) {
+              framesComponents.remove(dragState.name)
+            } else {
+              framesComponents.updateMeta(dragState.name, {
+                box: dragState.resultingBox,
+              })
+            }
             break
           }
         }

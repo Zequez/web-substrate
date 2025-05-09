@@ -10,6 +10,11 @@ async function uplink<T extends UplinkCmd>(
 ): Promise<UplinkReturn<T>> {
   console.log('🔻 Uplink:\n', cmd)
 
+  if (process.env.NODE_ENV !== 'development') {
+    console.log('Must run in dev mode for uplink to work')
+    return null!
+  }
+
   const response = await fetch(`http://localhost:18215`, {
     method: 'POST',
     body: JSON.stringify(cmd),

@@ -58,6 +58,11 @@ function createFramesComponentsStore() {
     await uplink('renameFrameComponent', name, newName)
   }
 
+  async function remove(name: string) {
+    delete components[name]
+    await uplink('removeFrameComponent', name)
+  }
+
   onMount(async () => {
     await loadComponents()
   })
@@ -68,6 +73,7 @@ function createFramesComponentsStore() {
     },
     updateMeta,
     rename,
+    remove,
   }
 }
 
