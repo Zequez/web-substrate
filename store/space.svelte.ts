@@ -1,4 +1,4 @@
-import type { Box } from './frames.svelte'
+import type { Box } from './box.svelte'
 import { maybeReadLS } from '../center/snippets/utils'
 
 export type Viewport = {

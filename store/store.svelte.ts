@@ -1,9 +1,10 @@
 import { onMount, setContext, getContext } from 'svelte'
 import { uplink, type UplinkFile } from '../uplink/client'
-import type { Box, Frame } from './frames.svelte'
+import { pos2box, type Box } from './box.svelte'
 import spaceStore from './space.svelte'
 import { createThingsStore } from './things.svelte'
 import { createFramesComponentsStore } from './framesComponents.svelte'
+import { updatedAt } from '../dist/assets/ezequiel.meta-Fk8Vt5oB'
 
 type StoreConfig = []
 type Cmd =
@@ -11,8 +12,9 @@ type Cmd =
   | ['mount-file', string]
   | ['update-mounted-file', string]
   | ['save-mounted-file']
-  | ['create-frame', Frame]
   | ['rename-frame', name: string, newName: string]
+  | ['rename-creating-frame', name: string]
+  | ['commit-new-frame']
 
 function createStore(...storeConfig: StoreConfig) {
   // let filesList = $state<string[]>([])
@@ -20,6 +22,11 @@ function createStore(...storeConfig: StoreConfig) {
   // let filesContent = $state<{ [key: string]: UplinkFile }>({})
   let space = spaceStore({ centerAt: null })
   let framesComponents = createFramesComponentsStore()
+  let creatingFrame = $state<{
+    box: Box
+    name: string
+    timestamp: number
+  } | null>(null)
   // let frames = createThingsStore<Frame>({ lsKey: "frames2", fsKey: "frames" });
   // let frames = $state<{ [key: string]: Frame }>(
   //   maybeReadLS('frames', {}) as { [key: string]: Frame },
@@ -52,7 +59,28 @@ function createStore(...storeConfig: StoreConfig) {
         break
       }
       case 'rename-frame': {
-        framesComponents.rename(cmd[1], cmd[2])
+        if (cmd[1] !== cmd[2]) {
+          framesComponents.rename(cmd[1], cmd[2])
+        }
+        break
+      }
+      case 'rename-creating-frame': {
+        creatingFrame!.name = cmd[1]
+        break
+      }
+      case 'commit-new-frame': {
+        if (!creatingFrame) return
+        await uplink(
+          'createFrameComponent',
+          creatingFrame.name,
+          JSON.stringify(
+            { box: creatingFrame.box, updatedAt: Date.now() },
+            null,
+            2,
+          ),
+          '<div>Hello there</div>',
+        )
+        creatingFrame = null
         break
       }
       case 'mount-file': {
@@ -91,6 +119,12 @@ function createStore(...storeConfig: StoreConfig) {
         start: [number, number]
         resultingBox: Box
       }
+    | {
+        type: 'createFrame'
+        start: [number, number]
+        end: [number, number]
+        resultingBox: Box
+      }
   let dragState = $state<DragState>({ type: 'none' })
 
   async function mousedown(
@@ -100,7 +134,17 @@ function createStore(...storeConfig: StoreConfig) {
     console.log('MouseDown', ev.button, cmd)
     switch (cmd[0]) {
       case 'space': {
-        dragState = { type: 'panning', panned: false }
+        if (ev.button === 1) {
+          dragState = { type: 'panning', panned: false }
+        } else if (ev.button === 0) {
+          const pos = space.mouseToGridPos(ev.clientX, ev.clientY)
+          dragState = {
+            type: 'createFrame',
+            start: pos,
+            end: pos,
+            resultingBox: { x: pos[0], y: pos[1], w: 1, h: 1 },
+          }
+        }
         break
       }
       case 'frame': {
@@ -134,6 +178,12 @@ function createStore(...storeConfig: StoreConfig) {
             space.cmd.pan(ev.movementX, ev.movementY)
             break
           }
+          case 'createFrame': {
+            const [x, y] = space.mouseToGridPos(ev.clientX, ev.clientY)
+            dragState.end = [x, y]
+            dragState.resultingBox = pos2box(dragState.start, dragState.end)
+            break
+          }
           case 'moveFrame': {
             const [x, y] = space.mouseToGridPos(ev.clientX, ev.clientY)
             const dx = dragState.start[0] - x
@@ -154,6 +204,20 @@ function createStore(...storeConfig: StoreConfig) {
         if (dragState.type === 'none') return
         ev.stopPropagation()
         switch (dragState.type) {
+          case 'createFrame': {
+            if (creatingFrame) {
+              creatingFrame.box = dragState.resultingBox
+              creatingFrame.timestamp = Date.now()
+            } else {
+              creatingFrame = {
+                box: dragState.resultingBox,
+                name: `frame-${Object.keys(framesComponents.all).length}`,
+                timestamp: Date.now(),
+              }
+            }
+
+            break
+          }
           case 'moveFrame': {
             framesComponents.updateMeta(dragState.name, {
               box: dragState.resultingBox,
@@ -191,6 +255,9 @@ function createStore(...storeConfig: StoreConfig) {
     },
     get framesComponents() {
       return framesComponents.all
+    },
+    get creatingFrame() {
+      return creatingFrame
     },
     // get frames() {
     //   return frames.all;

@@ -10,7 +10,7 @@ async function uplink<T extends UplinkCmd>(
 ): Promise<UplinkReturn<T>> {
   console.log('🔻 Uplink:\n', cmd)
 
-  const response = await fetch(`http://localhost:18215/${cmd}`, {
+  const response = await fetch(`http://localhost:18215`, {
     method: 'POST',
     body: JSON.stringify(cmd),
   })

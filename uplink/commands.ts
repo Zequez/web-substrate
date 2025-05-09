@@ -3,6 +3,7 @@ import {
   readFile as fsReadFile,
   stat,
   rename as fsRename,
+  mkdir,
 } from 'fs/promises'
 import { join } from 'path'
 
@@ -123,12 +124,42 @@ async function renameFrameComponent(name: string, newName: string) {
   return true // keeps the command API consistent with writeFile()
 }
 
+async function createFrameComponent(
+  name: string,
+  meta: string,
+  component: string,
+) {
+  const framesDir = 'frames'
+  const sveltePath = join(framesDir, `${name}.svelte`)
+  const metaPath = join(framesDir, `${name}.meta.json`)
+
+  // 1. Ensure frames/ exists.
+  await mkdir(framesDir, { recursive: true })
+
+  // 2. Guard: abort if either target file already exists.
+  const exists = async (p: string) =>
+    stat(p)
+      .then(() => true)
+      .catch((e) => e.code !== 'ENOENT' && Promise.reject(e))
+
+  if ((await exists(sveltePath)) || (await exists(metaPath))) {
+    throw new Error(`A frame called “${name}” already exists.`)
+  }
+
+  // 3. Write both files.
+  await Bun.write(sveltePath, component)
+  await Bun.write(metaPath, meta.endsWith('\n') ? meta : `${meta}\n`)
+
+  return true
+}
+
 export const cmds = {
   ping,
   filesList,
   readFile,
   writeFile,
   renameFrameComponent,
+  createFrameComponent,
 }
 
 export type UplinkCmd =
@@ -137,6 +168,7 @@ export type UplinkCmd =
   | ['readFile', ...Parameters<typeof readFile>]
   | ['writeFile', ...Parameters<typeof writeFile>]
   | ['renameFrameComponent', ...Parameters<typeof renameFrameComponent>]
+  | ['createFrameComponent', ...Parameters<typeof createFrameComponent>]
 
 export type UplinkReturn<T extends UplinkCmd> = T extends [
   infer K extends keyof typeof cmds,

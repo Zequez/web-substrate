@@ -5,6 +5,7 @@
   import Viewport from "./Viewport.svelte";
   import GridDisplay from "./GridDisplay.svelte";
   import Frame from "./Frame.svelte";
+  import CreatingFrame from "./CreatingFrame.svelte";
 
   SS.createStoreContext();
   const S = SS.store;
@@ -15,12 +16,13 @@
     }
   });
 
-  function onBlurFrameNameEditor(ev: FocusEvent, frameName: string) {
-    console.log("editFrameName");
-    console.log((ev.currentTarget as HTMLInputElement).value.trim());
-    const newFrameName = (ev.currentTarget as HTMLInputElement).value.trim();
-    S.cmd("rename-frame", frameName, newFrameName);
-  }
+  $effect(() => {
+    if (S.dragState) {
+      document.body.classList.add("select-none");
+    } else {
+      document.body.classList.remove("select-none");
+    }
+  });
 </script>
 
 <GridDisplay
@@ -33,6 +35,29 @@
   {#each Object.entries(S.framesComponents) as [name, { meta, Component }] (name)}
     <Frame {name} {Component} {meta} />
   {/each}
+  {#if S.dragState.type === "createFrame"}
+    {#if S.dragState.resultingBox.w >= 3 && S.dragState.resultingBox.h >= 3}
+      <div
+        class="absolute bg-white/50 rounded-md b-3 b-blue-100"
+        style={S.space.boxStyle(S.dragState.resultingBox)}
+      >
+        <div
+          class="bg-blue-100 absolute top-0 w-full px2"
+          style={`height: ${S.space.grid.size - 3}px;`}
+        ></div>
+      </div>
+    {:else}
+      <div
+        class="absolute bg-white/30 rounded-md"
+        style={S.space.boxStyle(S.dragState.resultingBox)}
+      ></div>
+    {/if}
+  {/if}
+  {#if S.creatingFrame}
+    {#key S.creatingFrame.timestamp}
+      <CreatingFrame name={S.creatingFrame.name} box={S.creatingFrame.box} />
+    {/key}
+  {/if}
   <!-- {#each Object.entries(S.frames) as [uuid, frame] (uuid)}
     {@const resolvedBox =
       S.dragState.type === "moveFrame" && S.dragState.uuid === uuid

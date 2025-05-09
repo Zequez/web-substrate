@@ -1,6 +1,9 @@
-# Web Substrate Experiment
+# The Web Substrate Experiment
 
 A canvas-based web building system.
+A living art project.
+An experiment.
+A thread of the stewarded archan web commons.
 
 ## Usage
 

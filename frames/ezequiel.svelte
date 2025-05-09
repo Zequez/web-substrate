@@ -2,7 +2,7 @@
   // import ezequiel from '/assets/ezequiel.jpg'
 </script>
 
-<div class="rounded-md overflow-hidden relative h-full w-full">
+<div class="rounded-b-md overflow-hidden relative h-full w-full">
   <img
     class="w-full h-full object-cover"
     src="/images/ezequiel.jpg"
