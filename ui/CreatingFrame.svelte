@@ -1,7 +1,7 @@
 <script lang="ts">
   import cx from 'classnames'
   import { onDestroy, onMount } from 'svelte'
-  import type { Box } from '../store/box.svelte.ts'
+  import type { Box } from '../store/box.ts'
   import SS from '../store/store.svelte.ts'
 
   const S = SS.store

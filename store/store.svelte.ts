@@ -1,10 +1,11 @@
 import { onMount, setContext, getContext } from 'svelte'
 import { uplink, type UplinkFile } from '../uplink/client'
-import { pos2box, type Box } from './box.svelte'
+import { pos2box, resizeBox, type Box } from './box'
 import spaceStore from './space.svelte'
 import { createThingsStore } from './things.svelte'
 import { createFramesComponentsStore } from './framesComponents.svelte'
 import { updatedAt } from '../dist/assets/ezequiel.meta-Fk8Vt5oB'
+import type { BoxResizeHandles } from './box'
 
 type StoreConfig = []
 type Cmd =
@@ -84,7 +85,7 @@ function createStore(...storeConfig: StoreConfig) {
             null,
             2,
           ),
-          '<div>Hello there</div>',
+          '<div class="bg-white rounded-b-md size-full">Hello there</div>',
         )
         creatingFrame = null
         break
@@ -126,6 +127,13 @@ function createStore(...storeConfig: StoreConfig) {
         resultingBox: Box
       }
     | {
+        type: 'resizeFrame'
+        name: string
+        gridPosStart: [number, number]
+        handler: BoxResizeHandles
+        resultingBox: Box
+      }
+    | {
         type: 'createFrame'
         start: [number, number]
         end: [number, number]
@@ -135,7 +143,10 @@ function createStore(...storeConfig: StoreConfig) {
 
   async function mousedown(
     ev: MouseEvent,
-    ...cmd: [target: 'frame', name: string] | [target: 'space']
+    ...cmd:
+      | [target: 'frame', name: string]
+      | [target: 'resizeHandler', frameName: string, handler: BoxResizeHandles]
+      | [target: 'space']
   ) {
     console.log('MouseDown', ev.button, cmd)
     switch (cmd[0]) {
@@ -166,6 +177,17 @@ function createStore(...storeConfig: StoreConfig) {
           }
         }
         break
+      }
+      case 'resizeHandler': {
+        ev.stopPropagation()
+        const frameComponent = framesComponents.all[cmd[1]]
+        dragState = {
+          type: 'resizeFrame',
+          name: cmd[1],
+          handler: cmd[2],
+          gridPosStart: space.mouseToGridPos(ev.clientX, ev.clientY),
+          resultingBox: { ...frameComponent.meta.box },
+        }
       }
     }
   }
@@ -198,6 +220,13 @@ function createStore(...storeConfig: StoreConfig) {
             dragState.resultingBox.x = box.x - dx
             dragState.resultingBox.y = box.y - dy
             break
+          }
+          case 'resizeFrame': {
+            const currentPos = space.mouseToGridPos(ev.clientX, ev.clientY)
+            const dx = currentPos[0] - dragState.gridPosStart[0]
+            const dy = currentPos[1] - dragState.gridPosStart[1]
+            const box = framesComponents.all[dragState.name].meta.box
+            dragState.resultingBox = resizeBox(dragState.handler, box, dx, dy)
           }
         }
       }
@@ -235,6 +264,12 @@ function createStore(...storeConfig: StoreConfig) {
                 box: dragState.resultingBox,
               })
             }
+            break
+          }
+          case 'resizeFrame': {
+            framesComponents.updateMeta(dragState.name, {
+              box: dragState.resultingBox,
+            })
             break
           }
         }
