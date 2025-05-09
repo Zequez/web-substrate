@@ -14,6 +14,7 @@ type Cmd =
   | ['save-mounted-file']
   | ['rename-frame', name: string, newName: string]
   | ['rename-creating-frame', name: string]
+  | ['cancel-creating-frame']
   | ['commit-new-frame']
 
 function createStore(...storeConfig: StoreConfig) {
@@ -65,7 +66,12 @@ function createStore(...storeConfig: StoreConfig) {
         break
       }
       case 'rename-creating-frame': {
-        creatingFrame!.name = cmd[1]
+        if (!creatingFrame) return
+        creatingFrame.name = cmd[1]
+        break
+      }
+      case 'cancel-creating-frame': {
+        creatingFrame = null
         break
       }
       case 'commit-new-frame': {

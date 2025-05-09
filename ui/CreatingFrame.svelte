@@ -1,6 +1,6 @@
 <script lang="ts">
   import cx from 'classnames'
-  import { onMount } from 'svelte'
+  import { onDestroy, onMount } from 'svelte'
   import type { Box } from '../store/box.svelte.ts'
   import SS from '../store/store.svelte.ts'
 
@@ -9,12 +9,24 @@
   const { name, box }: { name: string; box: Box } = $props()
   let nameEl = $state<HTMLDivElement>(null!)
 
-  async function onBlurFrameNameEditor(ev: FocusEvent) {
-    const newFrameName = (ev.currentTarget as HTMLDivElement).innerText.trim()
-    await S.cmd('rename-creating-frame', newFrameName)
-    if (!S.framesComponents[newFrameName]) {
-      await S.cmd('commit-new-frame')
+  async function confirmName() {
+    if (nameEl) {
+      const newFrameName = nameEl.innerText.trim()
+      await S.cmd('rename-creating-frame', newFrameName)
+      if (!S.framesComponents[newFrameName]) {
+        await S.cmd('commit-new-frame')
+      }
     }
+  }
+
+  function handleBlur(ev: FocusEvent) {
+    setTimeout(() => {
+      confirmName()
+    }, 100)
+  }
+
+  function cancelFrameCreating() {
+    S.cmd('cancel-creating-frame')
   }
 
   let nameTaken = $state(false)
@@ -54,9 +66,15 @@
           'outline-red-300! bg-red-50!': nameTaken,
         },
       )}
-      onkeydown={(ev) => ev.key === 'Enter' && ev.currentTarget.blur()}
+      onkeydown={(ev) => {
+        if (ev.key === 'Enter') {
+          confirmName()
+        } else if (ev.key === 'Escape') {
+          cancelFrameCreating()
+        }
+      }}
       onmousedown={(ev) => ev.stopPropagation()}
-      onblur={(ev) => onBlurFrameNameEditor(ev)}
+      onblur={(ev) => handleBlur(ev)}
     >
       {name}
     </div>
