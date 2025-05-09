@@ -4,7 +4,6 @@ import { pos2box, resizeBox, type Box } from './box'
 import spaceStore from './space.svelte'
 import { createThingsStore } from './things.svelte'
 import { createFramesComponentsStore } from './framesComponents.svelte'
-import { updatedAt } from '../dist/assets/ezequiel.meta-Fk8Vt5oB'
 import type { BoxResizeHandles } from './box'
 
 type StoreConfig = []

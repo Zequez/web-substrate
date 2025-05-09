@@ -9,8 +9,7 @@
     "typescript": "^5.0.0"
   },
   "scripts": {
-    "build": "vite build",
-    "dist-branch": ""
+    "build": "vite build"
   },
   "dependencies": {
     "@iconify-json/fa6-regular": "^1.2.3",

@@ -1,5 +1,4 @@
 <script>
-  import { e } from 'unocss'
 </script>
 
 <div

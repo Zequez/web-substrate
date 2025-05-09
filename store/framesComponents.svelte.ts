@@ -1,7 +1,24 @@
-import { onMount } from 'svelte'
-import { uplink, type UplinkFile } from '../uplink/client'
-const framesComponents = import.meta.glob('../frames/*.svelte')
-const framesMeta = import.meta.glob('../frames/*.meta.json')
+import { uplink } from '../uplink/client'
+const framesComponents2 = import.meta.glob('../frames/*.svelte', {
+  eager: true,
+})
+const framesMeta2 = import.meta.glob('../frames/*.meta.json', { eager: true })
+
+const framesComponents: FramesComponents = {}
+for (const path in framesComponents2) {
+  const name = path.split('/').pop()!.split('.')[0] // Extract component name (e.g., "ezequiel", "links")
+  framesComponents[name!] = {
+    Component: (framesComponents2[path] as any).default,
+    meta: null!,
+  }
+}
+
+for (const path in framesMeta2) {
+  const name = path.split('/').pop()!.split('.')[0] // Extract meta file name
+  framesComponents[name!].meta = (framesMeta2[path] as any).default
+}
+
+// import framesComponentsImport from '../framesImport.generated'
 
 export type FramesComponents = {
   [key: string]: {
@@ -9,6 +26,8 @@ export type FramesComponents = {
     Component: any
   }
 }
+
+// const framesComponents = framesComponentsImport as FramesComponents
 
 export type Meta = {
   box: {
@@ -21,28 +40,7 @@ export type Meta = {
 }
 
 function createFramesComponentsStore() {
-  let components = $state<FramesComponents>({})
-
-  const loadComponents = async () => {
-    console.log('Loading components!')
-    const comps: FramesComponents = {}
-    for (const path in framesComponents) {
-      const name = path.split('/').pop()!.split('.')[0] // Extract component name (e.g., "ezequiel", "links")
-      const componentModule = (await framesComponents[path]()) as any // Import the Svelte component
-      comps[name!] = {
-        Component: componentModule.default,
-        meta: null!,
-      }
-    }
-
-    for (const path in framesMeta) {
-      const name = path.split('/').pop()!.split('.')[0] // Extract meta file name
-      const metaModule = (await framesMeta[path]()) as any // Import the meta JSON
-      comps[name!].meta = metaModule.default
-    }
-
-    components = comps
-  }
+  let components = $state<FramesComponents>(framesComponents)
 
   async function updateMeta(name: string, meta: Partial<Meta>) {
     components[name].meta = { ...components[name].meta, ...meta }
@@ -62,10 +60,6 @@ function createFramesComponentsStore() {
     delete components[name]
     await uplink('removeFrameComponent', name)
   }
-
-  onMount(async () => {
-    await loadComponents()
-  })
 
   return {
     get all() {

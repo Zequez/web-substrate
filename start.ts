@@ -2,6 +2,7 @@ import { watch } from 'fs'
 import { VITE_PORT } from './ports'
 import { start } from './uplink/uplink'
 import openAiServer from './ai/server'
+import framesCodegen from './framesCodegen'
 
 let uplinkServer = start()
 let aiServer = openAiServer()
@@ -29,5 +30,13 @@ watch('./uplink', { recursive: true }, (eventType, fileName) => {
     restartUplink()
   }
 })
+
+// await framesCodegen()
+// watch('./frames', { recursive: true }, async (eventType, fileName) => {
+//   if (fileName) {
+//     console.log(`📝 Arquivo modificado FRAME: ${fileName}`)
+//     await framesCodegen()
+//   }
+// })
 
 await Bun.$`FORCE_COLOR=1 bun run vite dev --port ${VITE_PORT}`
