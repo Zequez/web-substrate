@@ -3,6 +3,7 @@ import { uplink, type UplinkFile } from '../uplink/client'
 import type { Box, Frame } from './frames.svelte'
 import spaceStore from './space.svelte'
 import { createThingsStore } from './things.svelte'
+import { createFramesComponentsStore } from './framesComponents.svelte'
 
 type StoreConfig = []
 type Cmd =
@@ -11,12 +12,14 @@ type Cmd =
   | ['update-mounted-file', string]
   | ['save-mounted-file']
   | ['create-frame', Frame]
+  | ['rename-frame', name: string, newName: string]
 
 function createStore(...storeConfig: StoreConfig) {
-  let filesList = $state<string[]>([])
-  let mountedFile = $state<string | null>(null)
-  let filesContent = $state<{ [key: string]: UplinkFile }>({})
+  // let filesList = $state<string[]>([])
+  // let mountedFile = $state<string | null>(null)
+  // let filesContent = $state<{ [key: string]: UplinkFile }>({})
   let space = spaceStore({ centerAt: null })
+  let framesComponents = createFramesComponentsStore()
   // let frames = createThingsStore<Frame>({ lsKey: "frames2", fsKey: "frames" });
   // let frames = $state<{ [key: string]: Frame }>(
   //   maybeReadLS('frames', {}) as { [key: string]: Frame },
@@ -49,24 +52,24 @@ function createStore(...storeConfig: StoreConfig) {
         break
       }
       case 'mount-file': {
-        const fileContent = await uplink('readFile', cmd[1])
-        mountedFile = cmd[1]
-        filesContent = {
-          ...filesContent,
-          [cmd[1]]: fileContent,
-        }
+        // const fileContent = await uplink('readFile', cmd[1])
+        // mountedFile = cmd[1]
+        // filesContent = {
+        //   ...filesContent,
+        //   [cmd[1]]: fileContent,
+        // }
         break
       }
       case 'update-mounted-file': {
-        if (mountedFile && filesContent[mountedFile].type === 'text') {
-          filesContent[mountedFile].data = cmd[1]
-        }
+        // if (mountedFile && filesContent[mountedFile].type === 'text') {
+        //   filesContent[mountedFile].data = cmd[1]
+        // }
         break
       }
       case 'save-mounted-file': {
-        if (mountedFile && filesContent[mountedFile].type === 'text') {
-          await uplink('writeFile', mountedFile, filesContent[mountedFile])
-        }
+        // if (mountedFile && filesContent[mountedFile].type === 'text') {
+        //   await uplink('writeFile', mountedFile, filesContent[mountedFile])
+        // }
         break
       }
     }
@@ -80,7 +83,7 @@ function createStore(...storeConfig: StoreConfig) {
       }
     | {
         type: 'moveFrame'
-        uuid: string
+        name: string
         start: [number, number]
         resultingBox: Box
       }
@@ -88,24 +91,26 @@ function createStore(...storeConfig: StoreConfig) {
 
   async function mousedown(
     ev: MouseEvent,
-    ...cmd: [target: 'frame', uuid: string] | [target: 'space']
+    ...cmd: [target: 'frame', name: string] | [target: 'space']
   ) {
+    console.log('MouseDown', ev.button, cmd)
     switch (cmd[0]) {
       case 'space': {
         dragState = { type: 'panning', panned: false }
         break
       }
       case 'frame': {
-        // if (ev.button === 0) {
-        //   ev.stopPropagation();
-        //   const uuid = cmd[1];
-        //   dragState = {
-        //     type: "moveFrame",
-        //     uuid,
-        //     start: space.mouseToGridPos(ev.clientX, ev.clientY),
-        //     resultingBox: { ...frames.all[uuid].value.box },
-        //   };
-        // }
+        if (ev.button === 0) {
+          ev.stopPropagation()
+          // const uuid = cmd[1];
+          const frameComponent = framesComponents.all[cmd[1]]
+          dragState = {
+            type: 'moveFrame',
+            name: cmd[1],
+            start: space.mouseToGridPos(ev.clientX, ev.clientY),
+            resultingBox: { ...frameComponent.meta.box },
+          }
+        }
         break
       }
     }
@@ -126,12 +131,13 @@ function createStore(...storeConfig: StoreConfig) {
             break
           }
           case 'moveFrame': {
-            // const [x, y] = space.mouseToGridPos(ev.clientX, ev.clientY);
-            // const dx = dragState.start[0] - x;
-            // const dy = dragState.start[1] - y;
-            // const fbox = frames.all[dragState.uuid].value.box;
-            // dragState.resultingBox.x = fbox.x - dx;
-            // dragState.resultingBox.y = fbox.y - dy;
+            const [x, y] = space.mouseToGridPos(ev.clientX, ev.clientY)
+            const dx = dragState.start[0] - x
+            const dy = dragState.start[1] - y
+            const box = framesComponents.all[dragState.name].meta.box
+            dragState.resultingBox.x = box.x - dx
+            dragState.resultingBox.y = box.y - dy
+            break
           }
         }
       }
@@ -143,11 +149,14 @@ function createStore(...storeConfig: StoreConfig) {
       case 'space': {
         if (dragState.type === 'none') return
         ev.stopPropagation()
-        // switch (dragState.type) {
-        //   case "moveFrame": {
-        //     frames.update(dragState.uuid, { box: dragState.resultingBox });
-        //   }
-        // }
+        switch (dragState.type) {
+          case 'moveFrame': {
+            framesComponents.updateMeta(dragState.name, {
+              box: dragState.resultingBox,
+            })
+            break
+          }
+        }
 
         dragState = { type: 'none' }
         break
@@ -176,18 +185,21 @@ function createStore(...storeConfig: StoreConfig) {
     get dragState() {
       return dragState
     },
+    get framesComponents() {
+      return framesComponents.all
+    },
     // get frames() {
     //   return frames.all;
     // },
-    get filesList() {
-      return filesList
-    },
-    get mountedFile() {
-      return mountedFile
-    },
-    get filesContent() {
-      return filesContent
-    },
+    // get filesList() {
+    //   return filesList
+    // },
+    // get mountedFile() {
+    //   return mountedFile
+    // },
+    // get filesContent() {
+    //   return filesContent
+    // },
     space,
   }
 }

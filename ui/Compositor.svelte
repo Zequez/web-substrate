@@ -4,50 +4,21 @@
   import SS from "../store/store.svelte.ts";
   import Viewport from "./Viewport.svelte";
   import GridDisplay from "./GridDisplay.svelte";
-  import Links from "../frames/links.svelte";
-  import LinksMeta from "../frames/links.meta.json";
-  import Ezequiel from "../frames/ezequiel.svelte";
-  import EzequielMeta from "../frames/ezequiel.meta.json";
-
-  const framesComponents = import.meta.glob("../frames/*.svelte");
-  const framesMeta = import.meta.glob("../frames/*.meta.json");
-
-  type Components = {
-    [key: string]: {
-      meta: { x: number; y: number; w: number; h: number };
-      Component: any;
-    };
-  };
-
-  let components = $state<Components>({});
-
-  const loadComponents = async () => {
-    const comps: Components = {};
-    for (const path in framesComponents) {
-      const name = path.split("/").pop()!.split(".")[0]; // Extract component name (e.g., "ezequiel", "links")
-      const componentModule = (await framesComponents[path]()) as any; // Import the Svelte component
-      comps[name!] = {
-        Component: componentModule.default,
-        meta: null!,
-      };
-    }
-
-    for (const path in framesMeta) {
-      const name = path.split("/").pop()!.split(".")[0]; // Extract meta file name
-      const metaModule = (await framesMeta[path]()) as any; // Import the meta JSON
-      comps[name!].meta = metaModule.default;
-    }
-
-    components = comps;
-  };
+  import Frame from "./Frame.svelte";
 
   SS.createStoreContext();
   const S = SS.store;
 
   onMount(async () => {
     S.cmd("ping");
-    await loadComponents();
   });
+
+  function onBlurFrameNameEditor(ev: FocusEvent, frameName: string) {
+    console.log("editFrameName");
+    console.log((ev.currentTarget as HTMLInputElement).value.trim());
+    const newFrameName = (ev.currentTarget as HTMLInputElement).value.trim();
+    S.cmd("rename-frame", frameName, newFrameName);
+  }
 </script>
 
 <GridDisplay
@@ -57,10 +28,8 @@
   color={"#fff"}
 />
 <Viewport viewportContext={{ depth: 0, parentPos: { x: 0, y: 0, z: 1 } }}>
-  {#each Object.entries(components) as [name, { meta, Component }] (name)}
-    <div style={S.space.boxStyle(meta)} class="absolute">
-      <Component />
-    </div>
+  {#each Object.entries(S.framesComponents) as [name, { meta, Component }] (name)}
+    <Frame {name} {Component} {meta} />
   {/each}
   <!-- {#each Object.entries(S.frames) as [uuid, frame] (uuid)}
     {@const resolvedBox =
