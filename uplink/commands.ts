@@ -1,7 +1,12 @@
-import { readdir, readFile as fsReadFile, stat } from 'fs/promises'
+import {
+  readdir,
+  readFile as fsReadFile,
+  stat,
+  rename as fsRename,
+} from 'fs/promises'
 import { join } from 'path'
 
-export async function ping<T>(msg?: T): Promise<['pong', T | undefined]> {
+async function ping<T>(msg?: T): Promise<['pong', T | undefined]> {
   return ['pong', msg]
 }
 
@@ -26,7 +31,7 @@ export type UplinkFile =
       data: string[]
     }
 
-export async function readFile(fileName: string): Promise<UplinkFile> {
+async function readFile(fileName: string): Promise<UplinkFile> {
   const filePath = join('.', fileName)
   const stats = await stat(filePath)
   if (stats.isDirectory()) {
@@ -62,7 +67,7 @@ export async function readFile(fileName: string): Promise<UplinkFile> {
   }
 }
 
-export async function writeFile(fileName: string, content: UplinkFile) {
+async function writeFile(fileName: string, content: UplinkFile) {
   const filePath = join('.', fileName)
   if (content.type === 'text') {
     await Bun.write(filePath, content.data)
@@ -70,11 +75,60 @@ export async function writeFile(fileName: string, content: UplinkFile) {
   return true
 }
 
+async function renameFrameComponent(name: string, newName: string) {
+  const framesDir = 'frames'
+
+  // Build absolute/relative paths once.
+  const oldSvelte = join(framesDir, `${name}.svelte`)
+  const newSvelte = join(framesDir, `${newName}.svelte`)
+  const oldMeta = join(framesDir, `${name}.meta.json`)
+  const newMeta = join(framesDir, `${newName}.meta.json`)
+
+  // ── 1. Guard: bail if new component already exists ───────────────
+  const exists = async (p: string) =>
+    stat(p)
+      .then(() => true)
+      .catch((e) => e.code !== 'ENOENT' && Promise.reject(e))
+
+  if ((await exists(newSvelte)) || (await exists(newMeta))) {
+    throw new Error(`A frame called “${newName}” already exists.`)
+  }
+
+  // ── 2. Rename both artefacts (this will throw if originals missing) ─
+  await fsRename(oldSvelte, newSvelte)
+  await fsRename(oldMeta, newMeta)
+
+  // ── 3. Patch meta file if it hard-codes the old name ───────────────
+  try {
+    const raw = await fsReadFile(newMeta, 'utf8')
+    const meta = JSON.parse(raw)
+
+    let changed = false
+    if (meta.name === name) {
+      meta.name = newName
+      changed = true
+    }
+    if (meta.component === name) {
+      meta.component = newName
+      changed = true
+    }
+
+    if (changed) {
+      await Bun.write(newMeta, JSON.stringify(meta, null, 2))
+    }
+  } catch {
+    /* if parsing fails we simply leave the file untouched */
+  }
+
+  return true // keeps the command API consistent with writeFile()
+}
+
 export const cmds = {
   ping,
   filesList,
   readFile,
   writeFile,
+  renameFrameComponent,
 }
 
 export type UplinkCmd =
@@ -82,6 +136,7 @@ export type UplinkCmd =
   | ['filesList', ...Parameters<typeof filesList>]
   | ['readFile', ...Parameters<typeof readFile>]
   | ['writeFile', ...Parameters<typeof writeFile>]
+  | ['renameFrameComponent', ...Parameters<typeof renameFrameComponent>]
 
 export type UplinkReturn<T extends UplinkCmd> = T extends [
   infer K extends keyof typeof cmds,

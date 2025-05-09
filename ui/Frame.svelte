@@ -11,9 +11,8 @@
   }: { name: string; meta: Meta; Component: any } = $props();
 
   function onBlurFrameNameEditor(ev: FocusEvent, frameName: string) {
-    console.log("editFrameName");
-    console.log((ev.currentTarget as HTMLInputElement).value.trim());
-    const newFrameName = (ev.currentTarget as HTMLInputElement).value.trim();
+    const newFrameName = (ev.currentTarget as HTMLDivElement).innerText.trim();
+    console.log(newFrameName);
     S.cmd("rename-frame", frameName, newFrameName);
   }
 
@@ -32,12 +31,18 @@
     tabindex="0"
     onmousedown={(ev) => S.ev.mousedown(ev, "frame", name)}
   >
-    /<input
-      class="cursor-pointer bg-transparent rounded-sm outline-blue-300 focus:(outline-solid bg-blue-50)"
-      value={name}
+    /
+    <div
+      contenteditable="true"
+      role="textbox"
+      tabindex="0"
+      class="cursor-text bg-transparent rounded-sm outline-blue-300 focus:(outline-solid bg-blue-50)"
       onkeydown={(ev) => ev.key === "Enter" && ev.currentTarget.blur()}
+      onmousedown={(ev) => ev.stopPropagation()}
       onblur={(ev) => onBlurFrameNameEditor(ev, name)}
-    />
+    >
+      {name}
+    </div>
   </div>
   <div class="absolute w-full bottom-0" style={`top: ${S.space.grid.size}px;`}>
     <Component />

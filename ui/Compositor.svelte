@@ -10,7 +10,9 @@
   const S = SS.store;
 
   onMount(async () => {
-    S.cmd("ping");
+    if (import.meta.env.DEV) {
+      S.cmd("ping");
+    }
   });
 
   function onBlurFrameNameEditor(ev: FocusEvent, frameName: string) {

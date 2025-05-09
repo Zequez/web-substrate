@@ -51,6 +51,10 @@ function createStore(...storeConfig: StoreConfig) {
         await uplink('ping', 'Test')
         break
       }
+      case 'rename-frame': {
+        framesComponents.rename(cmd[1], cmd[2])
+        break
+      }
       case 'mount-file': {
         // const fileContent = await uplink('readFile', cmd[1])
         // mountedFile = cmd[1]
