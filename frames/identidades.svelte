@@ -15,7 +15,7 @@
   >
     <div>
       <span class="font-mono">Investigador</span>
-      <span class="mx2 font-light">-</span>
+      <span class="mx2 font-light font-mono">-</span>
       <span class="font-serif text-[1.2em] font-thin tracking-widest"
         >Artista</span
       >
@@ -25,7 +25,7 @@
       style={`transform: perspective(100px) rotateX(20deg) scaleY(0.8);`}
     >
       <span class="font-mono">Researcher</span>
-      <span class="mx2 font-light">-</span>
+      <span class="mx2 font-light font-mono">-</span>
       <span class="font-serif text-[1.2em] font-thin tracking-widest"
         >Artist</span
       >
