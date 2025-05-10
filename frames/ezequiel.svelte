@@ -10,7 +10,7 @@
     draggable="false"
   />
   <div
-    class="absolute bottom-4 left-4 text-white text-[27px] font-black text-shadow-[0px_0px_2px_rgba(0,0,0,0.8)] uppercase tracking-wide"
+    class="absolute bottom-4 left-4 text-white text-[27px] font-black text-shadow-[0px_0px_2px_rgba(0,0,0,0.8)] tracking-wide"
   >
     Ezequiel<br />Adrián<br />Schwartzman
   </div>
