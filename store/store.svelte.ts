@@ -5,6 +5,7 @@ import spaceStore from './space.svelte'
 import { createFramesComponentsStore } from './framesComponents.svelte'
 import type { BoxResizeHandles } from './box'
 import type { Meta } from './meta'
+import noteTemplate from '../templates/note.svelte?raw'
 
 type StoreConfig = []
 
@@ -33,6 +34,7 @@ function createStore(...storeConfig: StoreConfig) {
       | ['cancel-creating-frame']
       | ['commit-creating-frame', name: string]
       | ['save-code', name: string, code: string]
+      | ['set-data', name: string, data: any]
   ) {
     console.log('⚪️ CMD', cmd)
 
@@ -63,13 +65,13 @@ function createStore(...storeConfig: StoreConfig) {
             h: creatingFrame.box.h,
           },
           showCodeBox: false,
+          data: {},
         }
         await uplink(
           'createFrameComponent',
           cmd[1],
           JSON.stringify(meta, null, 2),
-          `<div class="bg-black text-white text-xl rounded-b-md size-full flexcc">\n  Text\n</div>
-          `,
+          noteTemplate,
         )
         creatingFrame = null
         break
@@ -77,6 +79,10 @@ function createStore(...storeConfig: StoreConfig) {
 
       case 'save-code': {
         framesComponents.updateCode(cmd[1], cmd[2])
+        break
+      }
+      case 'set-data': {
+        framesComponents.updateMeta(cmd[1], { data: cmd[2] })
         break
       }
     }

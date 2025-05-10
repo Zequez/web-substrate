@@ -5,4 +5,5 @@ export type Meta = {
   updatedAt: number
   codeBox: Box
   showCodeBox: boolean
+  data: any
 }

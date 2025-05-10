@@ -40,7 +40,7 @@
       'hidden group-hover/frame:block absolute hover:bg-blue-300 bg-black/0 rounded-sm',
       styles[handle],
       {
-        'bg-blue-300': holding === handle,
+        'bg-blue-300 block pointer-events-none': holding === handle,
       },
     )}
   ></div>

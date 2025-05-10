@@ -99,8 +99,16 @@
       }
     }}
   />
-  <div class="absolute w-full bottom-0" style={`top: ${S.space.grid.size}px;`}>
-    <Component />
+  <div
+    class="absolute w-full bottom-0"
+    role="presentation"
+    onmousedown={(ev) => ev.stopPropagation()}
+    style={`top: ${S.space.grid.size}px;`}
+  >
+    <Component
+      data={meta.data}
+      onDataChange={(newData: any) => S.cmd('set-data', name, newData)}
+    />
   </div>
   <ResizeHandles
     holding={S.dragState.type === 'resizeFrame' &&
@@ -169,9 +177,14 @@
         disabled={!codeChanged}
         onmousedown={(ev) => ev.stopPropagation()}
         onclick={(ev) => S.cmd('save-code', name, codeInputValue)}
-        class="bg-green-500/70 hover:bg-green-500/90
+        class={cx(
+          `bg-green-500/70 hover:bg-green-500/90
         disabled:(opacity-50 saturate-0 text-black/50 text-shadow-none)
-        text-shadow-[0_1px_0_#0003] text-white h-full px2">Save (Cmd+S)</button
+        text-shadow-[0_1px_0_#0003] text-white h-full px2`,
+          {
+            'pointer-events-none': S.dragState.type === 'resizeFrame',
+          },
+        )}>Save (Cmd+S)</button
       >
     </div>
     <ResizeHandles

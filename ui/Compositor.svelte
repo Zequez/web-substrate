@@ -4,6 +4,7 @@
   import GridDisplay from './GridDisplay.svelte'
   import Frame from './Frame.svelte'
   import CreatingFrame from './CreatingFrame.svelte'
+  import TrashIcon from '~icons/fa6-solid/trash'
 
   SS.createStoreContext()
   const S = SS.store
@@ -25,8 +26,10 @@
 />
 {#if S.dragState.type === 'moveFrame'}
   <div
-    class="absolute bottom-0 right-0 rounded-tl-lg h[100px] w[100px] bg-red z-100 pointer-events-none"
-  ></div>
+    class="absolute bottom-0 right-0 rounded-tl-lg h[100px] w[100px] bg-red-500 z-100 pointer-events-none flexcc text-[40px] text-white"
+  >
+    <TrashIcon />
+  </div>
 {/if}
 <Viewport viewportContext={{ depth: 0, parentPos: { x: 0, y: 0, z: 1 } }}>
   {#each Object.entries(S.framesComponents) as [name, { meta, Component, code }] (name)}

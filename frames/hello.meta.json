@@ -1,0 +1,19 @@
+{
+  "box": {
+    "x": -64,
+    "y": 3,
+    "w": 17,
+    "h": 11
+  },
+  "updatedAt": 1746862533087,
+  "codeBox": {
+    "x": -64,
+    "y": 15,
+    "w": 17,
+    "h": 26
+  },
+  "showCodeBox": true,
+  "data": {
+    "text": "This component imports the note component, and is given a different meta data"
+  }
+}
