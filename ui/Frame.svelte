@@ -1,8 +1,9 @@
 <script lang="ts">
-  import type { Meta } from '../store/framesComponents.svelte'
+  import type { Meta } from '../store/meta.ts'
+
   import SS from '../store/store.svelte.ts'
   import ResizeHandles from './ResizeHandles.svelte'
-  import SpaceBox from './SpaceBox.svelte'
+  import FrameBar from './FrameBar.svelte'
 
   const S = SS.store
 
@@ -11,12 +12,6 @@
     meta,
     Component,
   }: { name: string; meta: Meta; Component: any } = $props()
-
-  function onBlurFrameNameEditor(ev: FocusEvent, frameName: string) {
-    const newFrameName = (ev.currentTarget as HTMLDivElement).innerText.trim()
-    console.log(newFrameName)
-    S.cmd('rename-frame', frameName, newFrameName)
-  }
 
   const box = $derived(
     S.dragState.type === 'moveFrame' && S.dragState.name === name
@@ -28,26 +23,14 @@
 </script>
 
 <div style={S.space.boxStyle(box)} class="absolute group/frame">
-  <div
-    class="bg-blue-100 tracking-wider font-mono absolute top-0 w-full rounded-t-md px2 flexcs cursor-move"
-    style={`height: ${S.space.grid.size}px;`}
-    role="button"
-    tabindex="0"
-    onmousedown={(ev) => S.ev.mousedown(ev, 'frame', name)}
-  >
-    /
-    <div
-      contenteditable="true"
-      role="textbox"
-      tabindex="0"
-      class="cursor-text bg-transparent rounded-sm outline-blue-300 focus:(outline-solid bg-blue-50)"
-      onkeydown={(ev) => ev.key === 'Enter' && ev.currentTarget.blur()}
-      onmousedown={(ev) => ev.stopPropagation()}
-      onblur={(ev) => onBlurFrameNameEditor(ev, name)}
-    >
-      {name}
-    </div>
-  </div>
+  <FrameBar
+    startFocused={false}
+    namesTaken={Object.keys(S.framesComponents).filter((n) => n !== name)}
+    {name}
+    onNameChange={(newName) => S.cmd('rename-frame', name, newName)}
+    onToggleCode={(ev) => S.ev.click(ev, 'frameCodingToggle', name)}
+    onDragStart={(ev) => S.ev.mousedown(ev, 'frameDragHandle', name)}
+  />
   <div class="absolute w-full bottom-0" style={`top: ${S.space.grid.size}px;`}>
     <Component />
   </div>

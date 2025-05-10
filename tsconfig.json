@@ -19,7 +19,7 @@
     "skipLibCheck": true,
     "noFallthroughCasesInSwitch": true,
 
-    "types": ["vite/client", "bun-types"],
+    "types": ["vite/client", "bun-types", "./node_modules/unplugin-icons/types/svelte5.d.ts"],
 
     // Some stricter flags (disabled by default)
     "noUnusedLocals": false,

@@ -22,6 +22,10 @@ export function pos2box(
   }
 }
 
+export function boxIsBigEnough(box: Box) {
+  return box.w >= MIN_SIZE && box.h >= MIN_SIZE
+}
+
 const MIN_SIZE = 3
 
 export function resizeBox(

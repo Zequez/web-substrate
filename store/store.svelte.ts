@@ -1,59 +1,39 @@
-import { onMount, setContext, getContext } from 'svelte'
-import { uplink, type UplinkFile } from '../uplink/client'
-import { pos2box, resizeBox, type Box } from './box'
+import { setContext, getContext } from 'svelte'
+import { uplink } from '../uplink/client'
+import { boxIsBigEnough, pos2box, resizeBox, type Box } from './box'
 import spaceStore from './space.svelte'
-import { createThingsStore } from './things.svelte'
 import { createFramesComponentsStore } from './framesComponents.svelte'
 import type { BoxResizeHandles } from './box'
 
 type StoreConfig = []
-type Cmd =
-  | ['ping']
-  | ['mount-file', string]
-  | ['update-mounted-file', string]
-  | ['save-mounted-file']
-  | ['rename-frame', name: string, newName: string]
-  | ['rename-creating-frame', name: string]
-  | ['cancel-creating-frame']
-  | ['commit-new-frame']
 
 function createStore(...storeConfig: StoreConfig) {
-  // let filesList = $state<string[]>([])
-  // let mountedFile = $state<string | null>(null)
-  // let filesContent = $state<{ [key: string]: UplinkFile }>({})
   let space = spaceStore({ centerAt: null })
   let framesComponents = createFramesComponentsStore()
   let creatingFrame = $state<{
     box: Box
-    name: string
     timestamp: number
   } | null>(null)
-  // let frames = createThingsStore<Frame>({ lsKey: "frames2", fsKey: "frames" });
-  // let frames = $state<{ [key: string]: Frame }>(
-  //   maybeReadLS('frames', {}) as { [key: string]: Frame },
-  // )
 
-  $effect(() => {
-    // localStorage.setItem('frames', JSON.stringify(frames))
-  })
+  //  ██████╗███╗   ███╗██████╗
+  // ██╔════╝████╗ ████║██╔══██╗
+  // ██║     ██╔████╔██║██║  ██║
+  // ██║     ██║╚██╔╝██║██║  ██║
+  // ╚██████╗██║ ╚═╝ ██║██████╔╝
+  //  ╚═════╝╚═╝     ╚═╝╚═════╝
 
-  onMount(async () => {
-    // const filesList = await uplink("filesList", ".");
-    // filesList.forEach((file) => {
-    //   const exists = Object.values(frames.all).find(
-    //     (f) => f.value.content.type === "file" && f.value.content.path === file
-    //   );
-    //   if (!exists) {
-    //     frames.create({
-    //       box: { x: 0, y: 0, w: 9, h: 3 },
-    //       content: { type: "file", path: file },
-    //     });
-    //   }
-    // });
-  })
+  async function runCmd(
+    ...cmd:
+      | ['ping']
+      | ['mount-file', string]
+      | ['update-mounted-file', string]
+      | ['save-mounted-file']
+      | ['rename-frame', name: string, newName: string]
+      | ['cancel-creating-frame']
+      | ['commit-creating-frame', name: string]
+  ) {
+    console.log('⚪️ CMD', cmd)
 
-  async function runCmd(...cmd: Cmd) {
-    console.log('⭕️', cmd)
     switch (cmd[0]) {
       case 'ping': {
         await uplink('ping', 'Test')
@@ -65,20 +45,15 @@ function createStore(...storeConfig: StoreConfig) {
         }
         break
       }
-      case 'rename-creating-frame': {
-        if (!creatingFrame) return
-        creatingFrame.name = cmd[1]
-        break
-      }
       case 'cancel-creating-frame': {
         creatingFrame = null
         break
       }
-      case 'commit-new-frame': {
+      case 'commit-creating-frame': {
         if (!creatingFrame) return
         await uplink(
           'createFrameComponent',
-          creatingFrame.name,
+          cmd[1],
           JSON.stringify(
             { box: creatingFrame.box, updatedAt: Date.now() },
             null,
@@ -89,29 +64,15 @@ function createStore(...storeConfig: StoreConfig) {
         creatingFrame = null
         break
       }
-      case 'mount-file': {
-        // const fileContent = await uplink('readFile', cmd[1])
-        // mountedFile = cmd[1]
-        // filesContent = {
-        //   ...filesContent,
-        //   [cmd[1]]: fileContent,
-        // }
-        break
-      }
-      case 'update-mounted-file': {
-        // if (mountedFile && filesContent[mountedFile].type === 'text') {
-        //   filesContent[mountedFile].data = cmd[1]
-        // }
-        break
-      }
-      case 'save-mounted-file': {
-        // if (mountedFile && filesContent[mountedFile].type === 'text') {
-        //   await uplink('writeFile', mountedFile, filesContent[mountedFile])
-        // }
-        break
-      }
     }
   }
+
+  // ██████╗ ██████╗  █████╗  ██████╗
+  // ██╔══██╗██╔══██╗██╔══██╗██╔════╝
+  // ██║  ██║██████╔╝███████║██║  ███╗
+  // ██║  ██║██╔══██╗██╔══██║██║   ██║
+  // ██████╔╝██║  ██║██║  ██║╚██████╔╝
+  // ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝
 
   type DragState =
     | { type: 'none' }
@@ -138,16 +99,30 @@ function createStore(...storeConfig: StoreConfig) {
         end: [number, number]
         resultingBox: Box
       }
+
   let dragState = $state<DragState>({ type: 'none' })
+
+  // ███╗   ███╗    ██████╗  ██████╗ ██╗    ██╗███╗   ██╗
+  // ████╗ ████║    ██╔══██╗██╔═══██╗██║    ██║████╗  ██║
+  // ██╔████╔██║    ██║  ██║██║   ██║██║ █╗ ██║██╔██╗ ██║
+  // ██║╚██╔╝██║    ██║  ██║██║   ██║██║███╗██║██║╚██╗██║
+  // ██║ ╚═╝ ██║    ██████╔╝╚██████╔╝╚███╔███╔╝██║ ╚████║
+  // ╚═╝     ╚═╝    ╚═════╝  ╚═════╝  ╚══╝╚══╝ ╚═╝  ╚═══╝
 
   async function mousedown(
     ev: MouseEvent,
     ...cmd:
-      | [target: 'frame', name: string]
+      | [target: 'frameDragHandle', name: string]
       | [target: 'resizeHandler', frameName: string, handler: BoxResizeHandles]
       | [target: 'space']
   ) {
-    console.log('MouseDown', ev.button, cmd)
+    console.log('🟢 M DOWN', ev.button, cmd)
+
+    if (creatingFrame && cmd[0] === 'space' && ev.button === 0) {
+      creatingFrame = null
+      return
+    }
+
     switch (cmd[0]) {
       case 'space': {
         if (ev.button === 1) {
@@ -163,7 +138,7 @@ function createStore(...storeConfig: StoreConfig) {
         }
         break
       }
-      case 'frame': {
+      case 'frameDragHandle': {
         if (ev.button === 0) {
           ev.stopPropagation()
           // const uuid = cmd[1];
@@ -191,7 +166,21 @@ function createStore(...storeConfig: StoreConfig) {
     }
   }
 
+  // ███╗   ███╗    ███╗   ███╗ ██████╗ ██╗   ██╗███████╗
+  // ████╗ ████║    ████╗ ████║██╔═══██╗██║   ██║██╔════╝
+  // ██╔████╔██║    ██╔████╔██║██║   ██║██║   ██║█████╗
+  // ██║╚██╔╝██║    ██║╚██╔╝██║██║   ██║╚██╗ ██╔╝██╔══╝
+  // ██║ ╚═╝ ██║    ██║ ╚═╝ ██║╚██████╔╝ ╚████╔╝ ███████╗
+  // ╚═╝     ╚═╝    ╚═╝     ╚═╝ ╚═════╝   ╚═══╝  ╚══════╝
+
+  let dragLog = $state<any[][]>([])
   async function mousemove(ev: MouseEvent, ...cmd: [target: 'space']) {
+    if (dragState.type !== 'none') {
+      // console.log('🟤 M DRAG MOVE', cmd)
+    } else {
+      // console.log('🟡 M MOVE', cmd)
+    }
+
     switch (cmd[0]) {
       case 'space': {
         space.cmd.setMouseXY(ev.clientX, ev.clientY)
@@ -232,21 +221,31 @@ function createStore(...storeConfig: StoreConfig) {
     }
   }
 
+  // ███╗   ███╗    ██╗   ██╗██████╗
+  // ████╗ ████║    ██║   ██║██╔══██╗
+  // ██╔████╔██║    ██║   ██║██████╔╝
+  // ██║╚██╔╝██║    ██║   ██║██╔═══╝
+  // ██║ ╚═╝ ██║    ╚██████╔╝██║
+  // ╚═╝     ╚═╝     ╚═════╝ ╚═╝
+
   async function mouseup(ev: MouseEvent, ...cmd: [target: 'space']) {
+    console.log('🔴 M UP', ev.button, cmd)
+
     switch (cmd[0]) {
       case 'space': {
         if (dragState.type === 'none') return
         ev.stopPropagation()
         switch (dragState.type) {
           case 'createFrame': {
-            if (creatingFrame) {
-              creatingFrame.box = dragState.resultingBox
-              creatingFrame.timestamp = Date.now()
-            } else {
-              creatingFrame = {
-                box: dragState.resultingBox,
-                name: `frame-${Object.keys(framesComponents.all).length}`,
-                timestamp: Date.now(),
+            if (boxIsBigEnough(dragState.resultingBox)) {
+              if (creatingFrame) {
+                creatingFrame.box = dragState.resultingBox
+                creatingFrame.timestamp = Date.now()
+              } else {
+                creatingFrame = {
+                  box: dragState.resultingBox,
+                  timestamp: Date.now(),
+                }
               }
             }
 
@@ -279,12 +278,41 @@ function createStore(...storeConfig: StoreConfig) {
     }
   }
 
+  // ██╗    ██╗██╗  ██╗███████╗███████╗██╗
+  // ██║    ██║██║  ██║██╔════╝██╔════╝██║
+  // ██║ █╗ ██║███████║█████╗  █████╗  ██║
+  // ██║███╗██║██╔══██║██╔══╝  ██╔══╝  ██║
+  // ╚███╔███╔╝██║  ██║███████╗███████╗███████╗
+  //  ╚══╝╚══╝ ╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝
+
   async function wheel(ev: WheelEvent, ...cmd: [target: 'space']) {
     switch (cmd[0]) {
       case 'space': {
         ev.preventDefault()
         ev.stopPropagation()
         space.cmd.setZoomFromWheel(ev.deltaY)
+      }
+    }
+  }
+
+  //  ██████╗██╗     ██╗ ██████╗██╗  ██╗
+  // ██╔════╝██║     ██║██╔════╝██║ ██╔╝
+  // ██║     ██║     ██║██║     █████╔╝
+  // ██║     ██║     ██║██║     ██╔═██╗
+  // ╚██████╗███████╗██║╚██████╗██║  ██╗
+  //  ╚═════╝╚══════╝╚═╝ ╚═════╝╚═╝  ╚═╝
+
+  async function click(
+    ev: MouseEvent,
+    ...cmd: [target: 'frameCodingToggle', name: string]
+  ) {
+    console.log('🔵 CLICK', ev.button, cmd)
+
+    switch (cmd[0]) {
+      case 'frameCodingToggle': {
+        framesComponents.updateMeta(cmd[1], {
+          showCodeBox: !framesComponents.all[cmd[1]].meta.showCodeBox,
+        })
       }
     }
   }
@@ -296,6 +324,7 @@ function createStore(...storeConfig: StoreConfig) {
       mousemove,
       mouseup,
       wheel,
+      click,
     },
     get dragState() {
       return dragState
@@ -306,18 +335,6 @@ function createStore(...storeConfig: StoreConfig) {
     get creatingFrame() {
       return creatingFrame
     },
-    // get frames() {
-    //   return frames.all;
-    // },
-    // get filesList() {
-    //   return filesList
-    // },
-    // get mountedFile() {
-    //   return mountedFile
-    // },
-    // get filesContent() {
-    //   return filesContent
-    // },
     space,
   }
 }

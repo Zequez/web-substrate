@@ -1,4 +1,5 @@
 import { uplink } from '../uplink/client'
+import type { Meta } from './meta'
 const framesComponents2 = import.meta.glob('../frames/*.svelte', {
   eager: true,
 })
@@ -28,16 +29,6 @@ export type FramesComponents = {
 }
 
 // const framesComponents = framesComponentsImport as FramesComponents
-
-export type Meta = {
-  box: {
-    x: number
-    y: number
-    w: number
-    h: number
-  }
-  updatedAt: number
-}
 
 function createFramesComponentsStore() {
   let components = $state<FramesComponents>(framesComponents)
