@@ -13,6 +13,7 @@
     <div class="flexcc">
       <a
         class="b-b-1.2 b-dashed hover:b-solid"
+        target="_blank"
         href="https://github.com/zequez/web-substrate"
         >Github @ zequez/web-substrate</a
       >
