@@ -5,12 +5,18 @@ const framesComponents2 = import.meta.glob('../frames/*.svelte', {
 })
 const framesMeta2 = import.meta.glob('../frames/*.meta.json', { eager: true })
 
+const framesCode2 = import.meta.glob('../frames/*.svelte', {
+  eager: true,
+  as: 'raw',
+})
+
 const framesComponents: FramesComponents = {}
 for (const path in framesComponents2) {
   const name = path.split('/').pop()!.split('.')[0] // Extract component name (e.g., "ezequiel", "links")
   framesComponents[name!] = {
     Component: (framesComponents2[path] as any).default,
     meta: null!,
+    code: framesCode2[path] as any,
   }
 }
 
@@ -25,6 +31,7 @@ export type FramesComponents = {
   [key: string]: {
     meta: Meta
     Component: any
+    code: string
   }
 }
 
@@ -52,11 +59,20 @@ function createFramesComponentsStore() {
     await uplink('removeFrameComponent', name)
   }
 
+  async function updateCode(name: string, code: string) {
+    components[name].code = code
+    await uplink('writeFile', `frames/${name}.svelte`, {
+      type: 'text',
+      data: code,
+    })
+  }
+
   return {
     get all() {
       return components
     },
     updateMeta,
+    updateCode,
     rename,
     remove,
   }

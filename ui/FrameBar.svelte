@@ -2,6 +2,7 @@
   import CodeIcon from '~icons/fa6-solid/code'
   import SS from '../store/store.svelte.ts'
   import { cx } from '../center/snippets/utils.ts'
+  import { on } from 'svelte/events'
 
   const gridSize = SS.store.space.grid.size
 
@@ -13,6 +14,7 @@
     onCancelNameChange,
     onToggleCode,
     onDragStart,
+    onPreviewBodyStateChange,
   }: {
     startFocused: boolean
     name: string
@@ -21,6 +23,7 @@
     onNameChange: (newName: string) => void
     onToggleCode?: (ev: MouseEvent) => void
     onDragStart?: (ev: MouseEvent) => void
+    onPreviewBodyStateChange?: (body: 'main' | 'code', state: boolean) => void
   } = $props()
 
   let editMode = $state<boolean>(startFocused)
@@ -129,8 +132,13 @@
   <div class="flex-grow"></div>
   {#if onToggleCode}
     <button
+      class="hover:text-green-6"
       onmousedown={(ev) => ev.stopPropagation()}
-      onclick={(ev) => onToggleCode(ev)}><CodeIcon class="h3" /></button
+      onfocus={() => onPreviewBodyStateChange?.('code', true)}
+      onblur={() => onPreviewBodyStateChange?.('code', false)}
+      onmouseover={() => onPreviewBodyStateChange?.('code', true)}
+      onmouseout={() => onPreviewBodyStateChange?.('code', false)}
+      onclick={(ev) => onToggleCode(ev)}><CodeIcon class="h3.5" /></button
     >
   {/if}
 </div>

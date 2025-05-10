@@ -3,8 +3,14 @@
     "x": -5,
     "y": 10,
     "w": 11,
-    "h": 9
+    "h": 8
   },
   "updatedAt": 1746841076279,
-  "showCodeBox": true
+  "showCodeBox": false,
+  "codeBox": {
+    "x": -14,
+    "y": 19,
+    "w": 20,
+    "h": 16
+  }
 }

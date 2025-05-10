@@ -29,8 +29,8 @@
   ></div>
 {/if}
 <Viewport viewportContext={{ depth: 0, parentPos: { x: 0, y: 0, z: 1 } }}>
-  {#each Object.entries(S.framesComponents) as [name, { meta, Component }] (name)}
-    <Frame {name} {Component} {meta} />
+  {#each Object.entries(S.framesComponents) as [name, { meta, Component, code }] (name)}
+    <Frame {name} {code} {Component} {meta} />
   {/each}
   {#if S.dragState.type === 'createFrame'}
     {#if S.dragState.resultingBox.w >= 3 && S.dragState.resultingBox.h >= 3}

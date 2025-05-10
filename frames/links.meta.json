@@ -5,5 +5,12 @@
     "w": 12,
     "h": 7
   },
-  "updatedAt": 1746667379152
+  "updatedAt": 1746667379152,
+  "showCodeBox": false,
+  "codeBox": {
+    "x": 26,
+    "y": -16,
+    "w": 29,
+    "h": 34
+  }
 }

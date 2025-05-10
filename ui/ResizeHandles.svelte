@@ -1,9 +1,13 @@
 <script lang="ts">
+  import { cx } from '../center/snippets/utils'
   import { type BoxResizeHandles } from '../store/box'
-  export let onMouseDown: (
-    ev: MouseEvent,
-    resizeHandle: BoxResizeHandles,
-  ) => void
+  const {
+    onMouseDown,
+    holding,
+  }: {
+    onMouseDown: (ev: MouseEvent, resizeHandle: BoxResizeHandles) => void
+    holding: BoxResizeHandles | null
+  } = $props()
 
   const handles: BoxResizeHandles[] = [
     'l',
@@ -29,11 +33,15 @@
 
 {#each handles as handle}
   <div
-    on:mousedown={(ev) => onMouseDown(ev, handle)}
+    onmousedown={(ev) => onMouseDown(ev, handle)}
     role="button"
     tabindex="0"
-    class="hidden group-hover/frame:block absolute hover:bg-blue-300 bg-black/0 rounded-sm {styles[
-      handle
-    ]}"
+    class={cx(
+      'hidden group-hover/frame:block absolute hover:bg-blue-300 bg-black/0 rounded-sm',
+      styles[handle],
+      {
+        'bg-blue-300': holding === handle,
+      },
+    )}
   ></div>
 {/each}
