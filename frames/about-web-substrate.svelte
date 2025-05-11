@@ -13,7 +13,7 @@
     my newsletter for my latest research, discoveries and creations.</div
   >
   <div
-    >If this turns you own and you want to be a part of it, join the team.</div
+    >If this turns you on and you want to be a part of it, join the team.</div
   >
   <div
     >The Web Substrate is and will always be a copyleft public-domain project.
