@@ -5,6 +5,8 @@
   import Frame from './Frame.svelte'
   import CreatingFrame from './CreatingFrame.svelte'
   import TrashIcon from '~icons/fa6-solid/trash'
+  import FocusField from './FocusField.svelte'
+  import VirtualFocusField from './VirtualFocusField.svelte'
 
   SS.createStoreContext()
   const S = SS.store
@@ -24,6 +26,22 @@
   size={S.space.grid.size}
   color={'#fff'}
 />
+<VirtualFocusField
+  focusablePoints={S.focusablePoints}
+  onFocusChanges={(newFocus) => S.cmd('focus-frame', newFocus)}
+  initialCenter={S.space.screenCenter}
+  onCenterChanges={(c) => S.space.cmd.centerTo(c)}
+  onZoomToFit={(target) => S.cmd('zoom-to-fit', target)}
+  visualization={false}
+  focusedAt={S.focusedFrame}
+/>
+<!-- <FocusField
+  pos={S.space.pos}
+  vp={S.space.vp}
+  gridSize={S.space.grid.size}
+  focusablePoints={S.focusablePoints}
+  currentFocus={S.focusedFrame}
+/> -->
 {#if S.dragState.type === 'moveFrame'}
   <div
     class="absolute bottom-0 right-0 rounded-tl-lg h[100px] w[100px] bg-red-500 z-100 pointer-events-none flexcc text-[40px] text-white"
@@ -31,7 +49,10 @@
     <TrashIcon />
   </div>
 {/if}
-<Viewport viewportContext={{ depth: 0, parentPos: { x: 0, y: 0, z: 1 } }}>
+<Viewport
+  viewportContext={{ depth: 0, parentPos: { x: 0, y: 0, z: 1 } }}
+  visualizeCenter={false}
+>
   {#each Object.entries(S.framesComponents) as [name, { meta, Component, code }] (name)}
     <Frame {name} {code} {Component} {meta} />
   {/each}

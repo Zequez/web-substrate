@@ -1,6 +1,14 @@
 import { setContext, getContext } from 'svelte'
 import { uplink } from '../uplink/client'
-import { boxIsBigEnough, pos2box, resizeBox, type Box } from './box'
+import {
+  boxCenter,
+  boxIsBigEnough,
+  boxSurface,
+  findBoxInTheDirectionOf,
+  pos2box,
+  resizeBox,
+  type Box,
+} from './box'
 import spaceStore from './space.svelte'
 import { createFramesComponentsStore } from './framesComponents.svelte'
 import type { BoxResizeHandles } from './box'
@@ -9,6 +17,8 @@ import noteTemplate from '../templates/note.svelte?raw'
 
 type StoreConfig = []
 
+export type FrameBody = 'main' | 'code'
+
 function createStore(...storeConfig: StoreConfig) {
   let space = spaceStore({ centerAt: null })
   let framesComponents = createFramesComponentsStore()
@@ -16,6 +26,30 @@ function createStore(...storeConfig: StoreConfig) {
     box: Box
     timestamp: number
   } | null>(null)
+  let focusedFrame = $state<[string, FrameBody] | null>(null)
+  let navigationMode = $state<'hand' | 'focus'>('hand')
+
+  let focusablePoints = $derived.by(() => {
+    let frameBoxes: [string, FrameBody, pos: [number, number], mass: number][] =
+      []
+    Object.entries(framesComponents.all).forEach(([name, frame]) => {
+      frameBoxes.push([
+        name,
+        'main',
+        boxCenter(frame.meta.box),
+        boxSurface(frame.meta.box),
+      ])
+      if (frame.meta.showCodeBox) {
+        frameBoxes.push([
+          name,
+          'code',
+          boxCenter(frame.meta.codeBox),
+          boxSurface(frame.meta.codeBox),
+        ])
+      }
+    })
+    return frameBoxes
+  })
 
   //  ██████╗███╗   ███╗██████╗
   // ██╔════╝████╗ ████║██╔══██╗
@@ -35,6 +69,10 @@ function createStore(...storeConfig: StoreConfig) {
       | ['commit-creating-frame', name: string]
       | ['save-code', name: string, code: string]
       | ['set-data', name: string, data: any]
+      | ['exit-focus-mode']
+      | ['focus-frame', [string, FrameBody] | null]
+      | ['shift-focus-to-direction', vector: [number, number]]
+      | ['zoom-to-fit', [string, FrameBody]]
   ) {
     console.log('⚪️ CMD', cmd)
 
@@ -85,6 +123,52 @@ function createStore(...storeConfig: StoreConfig) {
         framesComponents.updateMeta(cmd[1], { data: cmd[2] })
         break
       }
+      case 'exit-focus-mode': {
+        navigationMode = 'hand'
+        break
+      }
+      case 'focus-frame': {
+        focusedFrame = cmd[1]
+        break
+      }
+      case 'zoom-to-fit': {
+        const [name, body] = cmd[1]
+        const comp = framesComponents.all[name]
+        const box = body === 'main' ? comp.meta.box : comp.meta.codeBox
+        space.cmd.setZoomToFitBox(box)
+        // space.zoomToBox(framesComponents.all[name][body].meta.box)
+        break
+      }
+      // case 'shift-focus-to-direction': {
+      //   console.log('🔵 SHIFT FOCUS TO DIRECTION', cmd[1])
+      //   if (navigationMode === 'hand') {
+      //     navigationMode = 'focus'
+      //   }
+
+      //   const [fName, fBody] = focusStack[focusStack.length - 1] || [null, null]
+      //   const boxes: [string, FrameBody, Box][] = []
+      //   Object.entries(framesComponents.all).forEach(([name, frame]) => {
+      //     if (!(fName === name && fBody === 'main')) {
+      //       boxes.push([name, 'main', frame.meta.box])
+      //     }
+      //     if (frame.meta.showCodeBox && !(fName === name && fBody === 'code')) {
+      //       boxes.push([name, 'code', frame.meta.codeBox])
+      //     }
+      //   })
+
+      //   const index = findBoxInTheDirectionOf(
+      //     space.screenCenter,
+      //     cmd[1],
+      //     boxes.map(([, , box]) => box),
+      //   )
+      //   const [frameName, body] = index === -1 ? [null, null] : boxes[index]
+
+      //   if (frameName && body) {
+      //     console.log('FOCUS', frameName, body)
+      //     focusStack.push([frameName, body])
+      //   }
+      //   break
+      // }
     }
   }
 
@@ -104,14 +188,15 @@ function createStore(...storeConfig: StoreConfig) {
     | {
         type: 'moveFrame'
         name: string
-        body: 'main' | 'code'
+        body: FrameBody
         start: [number, number]
         resultingBox: Box
+        moved: boolean
       }
     | {
         type: 'resizeFrame'
         name: string
-        body: 'main' | 'code'
+        body: FrameBody
         gridPosStart: [number, number]
         handler: BoxResizeHandles
         resultingBox: Box
@@ -135,11 +220,11 @@ function createStore(...storeConfig: StoreConfig) {
   async function mousedown(
     ev: MouseEvent,
     ...cmd:
-      | [target: 'frameDragHandle', name: string, body: 'main' | 'code']
+      | [target: 'frameDragHandle', name: string, body: FrameBody]
       | [
           target: 'resizeHandler',
           frameName: string,
-          body: 'main' | 'code',
+          body: FrameBody,
           handler: BoxResizeHandles,
         ]
       | [target: 'space']
@@ -163,6 +248,7 @@ function createStore(...storeConfig: StoreConfig) {
             end: pos,
             resultingBox: { x: pos[0], y: pos[1], w: 1, h: 1 },
           }
+          focusedFrame = null
         }
         break
       }
@@ -179,6 +265,7 @@ function createStore(...storeConfig: StoreConfig) {
             resultingBox: {
               ...(cmd[2] === 'main' ? comp.meta.box : comp.meta.codeBox),
             },
+            moved: false,
           }
         }
         break
@@ -244,6 +331,7 @@ function createStore(...storeConfig: StoreConfig) {
               dragState.body === 'main' ? comp.meta.box : comp.meta.codeBox
             dragState.resultingBox.x = box.x - dx
             dragState.resultingBox.y = box.y - dy
+            dragState.moved = true
             break
           }
           case 'resizeFrame': {
@@ -292,23 +380,27 @@ function createStore(...storeConfig: StoreConfig) {
             break
           }
           case 'moveFrame': {
-            if (
-              space.vp.screenW - ev.clientX <= 100 &&
-              space.vp.screenH - ev.clientY <= 100 &&
-              dragState.body === 'main'
-            ) {
-              framesComponents.remove(dragState.name)
+            if (!dragState.moved) {
+              focusedFrame = [dragState.name, dragState.body]
             } else {
-              framesComponents.updateMeta(
-                dragState.name,
+              if (
+                space.vp.screenW - ev.clientX <= 100 &&
+                space.vp.screenH - ev.clientY <= 100 &&
                 dragState.body === 'main'
-                  ? {
-                      box: dragState.resultingBox,
-                    }
-                  : {
-                      codeBox: dragState.resultingBox,
-                    },
-              )
+              ) {
+                framesComponents.remove(dragState.name)
+              } else {
+                framesComponents.updateMeta(
+                  dragState.name,
+                  dragState.body === 'main'
+                    ? {
+                        box: dragState.resultingBox,
+                      }
+                    : {
+                        codeBox: dragState.resultingBox,
+                      },
+                )
+              }
             }
             break
           }
@@ -388,6 +480,15 @@ function createStore(...storeConfig: StoreConfig) {
       return creatingFrame
     },
     space,
+    get focusedFrame() {
+      return focusedFrame
+    },
+    get navigationMode() {
+      return navigationMode
+    },
+    get focusablePoints() {
+      return focusablePoints
+    },
   }
 }
 

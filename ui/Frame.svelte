@@ -43,6 +43,14 @@
         : meta.codeBox,
   )
 
+  let focusedBody = $derived<'main' | 'code' | null>(
+    S.focusedFrame
+      ? S.focusedFrame[0] === name
+        ? S.focusedFrame[1]
+        : null
+      : null,
+  )
+
   let codeInputEl = $state<HTMLDivElement | null>(null)
   let codeInputValue = $state<string>(code)
 
@@ -85,7 +93,13 @@
 ╚═╝     ╚═╝╚═╝  ╚═╝╚═╝╚═╝  ╚═══╝
                                  -->
 
-<div style={S.space.boxStyle(mainBox)} class="absolute group/frame">
+<div
+  style={S.space.boxStyle(mainBox)}
+  class={cx('absolute group/frame rounded-md', {
+    'shadow-[0_0_0_3.5px_rgba(0,0,0,0.6)] shadow-blue-500':
+      focusedBody === 'main',
+  })}
+>
   <FrameBar
     startFocused={false}
     namesTaken={Object.keys(S.framesComponents).filter((n) => n !== name)}
@@ -98,6 +112,7 @@
         previewCode = state
       }
     }}
+    focusHighlight={focusedBody === 'main'}
   />
   <div
     class="absolute w-full bottom-0"
@@ -133,18 +148,22 @@
 {#if meta.showCodeBox || previewCode}
   <div
     style={S.space.boxStyle(codeBox)}
-    class={cx(
-      'absolute group/frame z-1000 flex flex-col shadow-[0px_0px_12px_0px_rgba(0,0,0,0.6)]',
-      {
-        'opacity-50 pointer-events-none': !meta.showCodeBox && previewCode,
-      },
-    )}
+    class={cx('absolute group/frame z-1000 flex flex-col rounded-md', {
+      'opacity-50 pointer-events-none': !meta.showCodeBox && previewCode,
+      'shadow-[0_0_0_3.5px_rgba(59,130,246,255)]': focusedBody === 'code',
+    })}
     role="presentation"
     onmousedown={(ev) => S.ev.mousedown(ev, 'frameDragHandle', name, 'code')}
   >
     <div
       style={`height: ${S.space.grid.size}px;`}
-      class="flex-shrink-0 font-mono bg-gray-100 rounded-t-md flexcs px2 text-black/80 cursor-move"
+      class={cx(
+        'flex-shrink-0 font-mono rounded-t-md flexcs px2 text-black/80 cursor-move',
+        {
+          'bg-gray-100': focusedBody !== 'code',
+          'bg-blue-300': focusedBody === 'code',
+        },
+      )}
     >
       <div class="flex-grow"
         ><span class="opacity-50 font-bold">&lt;</span><span class="mx.5"

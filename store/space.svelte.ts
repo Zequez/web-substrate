@@ -139,6 +139,15 @@ function spaceStore(config: { centerAt: Box | null }) {
     pos.z = processedZoom
   }
 
+  function setZoomToFitBox(box: Box) {
+    const w = (box.w + 20) * gridSize
+    const h = (box.h + 20) * gridSize
+    const zoomForW = vp.width / w
+    const zoomForH = vp.height / h
+    const newZoom = Math.min(zoomForW, zoomForH, 0.5)
+    pos.z = 1 / newZoom
+  }
+
   function setMinZoomToFitBox(box: Box) {
     const w = (box.w + 5) * gridSize
     const h = (box.h + 5) * gridSize
@@ -184,6 +193,7 @@ function spaceStore(config: { centerAt: Box | null }) {
     setZoomFromWheel: (delta: number) => {
       setZoom(pos.z + delta * zoomStep, mouseX, mouseY)
     },
+    setZoomToFitBox,
     setMouseXY(x: number, y: number) {
       mouseX = x
       mouseY = y
@@ -197,6 +207,10 @@ function spaceStore(config: { centerAt: Box | null }) {
     panTo(x: number, y: number) {
       pos.x = x
       pos.y = y
+    },
+    centerTo(p: [number, number]) {
+      pos.x = -p[0]
+      pos.y = -p[1]
     },
     setMinZoomToFitBox,
     panZoomToFit,
@@ -228,6 +242,9 @@ function spaceStore(config: { centerAt: Box | null }) {
     },
     get pos() {
       return pos
+    },
+    get screenCenter(): [number, number] {
+      return [-pos.x, -pos.y]
     },
     mouse: {
       get gridX() {

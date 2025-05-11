@@ -1,8 +1,15 @@
 <script lang="ts">
   // import ezequiel from '/assets/ezequiel.jpg'
+  import SS from '../store/store.svelte'
+
+  const S = SS.store
 </script>
 
 <div class="rounded-b-md overflow-hidden relative h-full w-full">
+  <!-- <div
+    class="absolute inset-0 flexcc bg-black text-white text-xl whitespace-pre-line z-200"
+    >{JSON.stringify(S.framesComponents['ezequiel'].meta, null, 2)}</div
+  > -->
   <img
     class="w-full h-full object-cover"
     src="/images/ezequiel.jpg"

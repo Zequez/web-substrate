@@ -2,7 +2,6 @@
   import CodeIcon from '~icons/fa6-solid/code'
   import SS from '../store/store.svelte.ts'
   import { cx } from '../center/snippets/utils.ts'
-  import { on } from 'svelte/events'
 
   const gridSize = SS.store.space.grid.size
 
@@ -15,6 +14,7 @@
     onToggleCode,
     onDragStart,
     onPreviewBodyStateChange,
+    focusHighlight,
   }: {
     startFocused: boolean
     name: string
@@ -24,6 +24,7 @@
     onToggleCode?: (ev: MouseEvent) => void
     onDragStart?: (ev: MouseEvent) => void
     onPreviewBodyStateChange?: (body: 'main' | 'code', state: boolean) => void
+    focusHighlight?: boolean
   } = $props()
 
   let editMode = $state<boolean>(startFocused)
@@ -33,17 +34,6 @@
   let editValueIsValid = $derived(
     trimmedEditValue.length > 0 && !editValueNameIsTaken,
   )
-
-  // let editingValue = $state<string | null>(startFocused ? name : null)
-  // let trimmedValue = $derived(
-  //   editingValue !== null ? editingValue.trim() : null,
-  // )
-  // let nameIsTaken = $derived(
-  //   trimmedValue !== null ? namesTaken.includes(trimmedValue) : null,
-  // )
-  // let nameIsValid = $derived(
-  //   trimmedValue !== null && nameIsTaken !== null ? trimmedValue.length > 0 && !nameIsTaken : null,
-  // )
 
   function edit() {
     editValue = name
@@ -78,9 +68,11 @@
 
 <div
   class={cx(
-    'bg-blue-100 tracking-wider font-mono absolute top-0 w-full rounded-t-md px2 flexcs',
+    'tracking-wider font-mono absolute top-0 w-full rounded-t-md px2 flexcs',
     {
       'cursor-move': !!onDragStart,
+      'bg-blue-300': focusHighlight,
+      'bg-blue-100': !focusHighlight,
     },
   )}
   style={`height: ${gridSize}px;`}
