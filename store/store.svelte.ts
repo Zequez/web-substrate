@@ -184,6 +184,7 @@ function createStore(...storeConfig: StoreConfig) {
     | {
         type: 'panning'
         panned: boolean
+        lastPos: [number, number]
       }
     | {
         type: 'moveFrame'
@@ -217,8 +218,23 @@ function createStore(...storeConfig: StoreConfig) {
   // ██║ ╚═╝ ██║    ██████╔╝╚██████╔╝╚███╔███╔╝██║ ╚████║
   // ╚═╝     ╚═╝    ╚═════╝  ╚═════╝  ╚══╝╚══╝ ╚═╝  ╚═══╝
 
+  let wrapEv = (ev: MouseEvent | TouchEvent) => {
+    const isTouch = ev.type.startsWith('touch')
+    return {
+      clientX: isTouch
+        ? (ev as TouchEvent).touches[0].clientX
+        : (ev as MouseEvent).clientX,
+      clientY: isTouch
+        ? (ev as TouchEvent).touches[0].clientY
+        : (ev as MouseEvent).clientY,
+      button: isTouch ? -1 : (ev as MouseEvent).button,
+      preventDefault: () => ev.preventDefault(),
+      stopPropagation: () => ev.stopPropagation(),
+    }
+  }
+
   async function mousedown(
-    ev: MouseEvent,
+    ev2: MouseEvent | TouchEvent,
     ...cmd:
       | [target: 'frameDragHandle', name: string, body: FrameBody]
       | [
@@ -229,6 +245,7 @@ function createStore(...storeConfig: StoreConfig) {
         ]
       | [target: 'space']
   ) {
+    const ev = wrapEv(ev2)
     console.log('🟢 M DOWN', ev.button, cmd)
 
     if (creatingFrame && cmd[0] === 'space' && ev.button === 0) {
@@ -238,8 +255,12 @@ function createStore(...storeConfig: StoreConfig) {
 
     switch (cmd[0]) {
       case 'space': {
-        if (ev.button === 1) {
-          dragState = { type: 'panning', panned: false }
+        if (ev.button === 1 || ev.button === -1) {
+          dragState = {
+            type: 'panning',
+            panned: false,
+            lastPos: [ev.clientX, ev.clientY],
+          }
         } else if (ev.button === 0) {
           const pos = space.mouseToGridPos(ev.clientX, ev.clientY)
           dragState = {
@@ -255,7 +276,6 @@ function createStore(...storeConfig: StoreConfig) {
       case 'frameDragHandle': {
         if (ev.button === 0) {
           ev.stopPropagation()
-          // const uuid = cmd[1];
           const comp = framesComponents.all[cmd[1]]
           dragState = {
             type: 'moveFrame',
@@ -295,7 +315,11 @@ function createStore(...storeConfig: StoreConfig) {
   // ╚═╝     ╚═╝    ╚═╝     ╚═╝ ╚═════╝   ╚═══╝  ╚══════╝
 
   let dragLog = $state<any[][]>([])
-  async function mousemove(ev: MouseEvent, ...cmd: [target: 'space']) {
+  async function mousemove(
+    ev2: MouseEvent | TouchEvent,
+    ...cmd: [target: 'space']
+  ) {
+    const ev = wrapEv(ev2)
     if (dragState.type !== 'none') {
       // console.log('🟤 M DRAG MOVE', cmd)
     } else {
@@ -312,7 +336,10 @@ function createStore(...storeConfig: StoreConfig) {
             if (!dragState.panned) {
               dragState.panned = true
             }
-            space.cmd.pan(ev.movementX, ev.movementY)
+            const dx = ev.clientX - dragState.lastPos[0]
+            const dy = ev.clientY - dragState.lastPos[1]
+            dragState.lastPos = [ev.clientX, ev.clientY]
+            space.cmd.pan(dx, dy)
             break
           }
           case 'createFrame': {
@@ -356,8 +383,11 @@ function createStore(...storeConfig: StoreConfig) {
   // ██║ ╚═╝ ██║    ╚██████╔╝██║
   // ╚═╝     ╚═╝     ╚═════╝ ╚═╝
 
-  async function mouseup(ev: MouseEvent, ...cmd: [target: 'space']) {
-    console.log('🔴 M UP', ev.button, cmd)
+  async function mouseup(
+    ev: MouseEvent | TouchEvent,
+    ...cmd: [target: 'space']
+  ) {
+    console.log('🔴 M UP', (ev as MouseEvent).button || -1, cmd)
 
     switch (cmd[0]) {
       case 'space': {

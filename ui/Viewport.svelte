@@ -108,6 +108,9 @@
 <!-- bind:this={S.containerEl} -->
 <div
   bind:this={el}
+  ontouchstart={(ev) => S.ev.mousedown(ev, 'space')}
+  ontouchmove={(ev) => S.ev.mousemove(ev, 'space')}
+  ontouchend={(ev) => S.ev.mouseup(ev, 'space')}
   onmouseup={(ev) => S.ev.mouseup(ev, 'space')}
   onmousemove={(ev) => S.ev.mousemove(ev, 'space')}
   onwheel={(ev) => S.ev.wheel(ev, 'space')}
