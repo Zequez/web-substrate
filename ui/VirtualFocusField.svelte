@@ -26,7 +26,7 @@
 
   let center = $state<[number, number]>(initialCenter)
   let targetCenter = $state<[number, number]>([0, 0])
-  let flowMode = $state<boolean>(true)
+  let flowMode = $state<boolean>(false)
   let points: [number, number, string, FrameBody][] = $derived(
     focusablePoints.map((p) => [...p[2], p[0], p[1]]),
   )

@@ -39,4 +39,4 @@ watch('./uplink', { recursive: true }, (eventType, fileName) => {
 //   }
 // })
 
-await Bun.$`FORCE_COLOR=1 bun run vite dev --port ${VITE_PORT}`
+await Bun.$`FORCE_COLOR=1 bun run vite dev --port ${VITE_PORT} `

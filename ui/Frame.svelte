@@ -118,6 +118,8 @@
     class="absolute w-full bottom-0"
     role="presentation"
     onmousedown={(ev) => ev.stopPropagation()}
+    onkeydown={(ev) => ev.stopPropagation()}
+    onkeyup={(ev) => ev.stopPropagation()}
     style={`top: ${S.space.grid.size}px;`}
   >
     <Component
@@ -154,6 +156,8 @@
     })}
     role="presentation"
     onmousedown={(ev) => S.ev.mousedown(ev, 'frameDragHandle', name, 'code')}
+    onkeydown={(ev) => ev.stopPropagation()}
+    onkeyup={(ev) => ev.stopPropagation()}
   >
     <div
       style={`height: ${S.space.grid.size}px;`}

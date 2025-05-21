@@ -99,7 +99,11 @@
           doneEditing()
         }}
         onmousedown={(ev) => ev.stopPropagation()}
+        onkeydown={(ev) => {
+          ev.stopPropagation()
+        }}
         onkeypress={(ev) => {
+          ev.stopPropagation()
           if (ev.key === 'Enter') {
             doneEditing()
           } else if (ev.key === 'Escape') {
@@ -110,16 +114,19 @@
       {#if editValueNameIsTaken}
         <div
           class="absolute pointer-events-none text-xs text-red-500 left-0 bottom-full mb1 z-100 h-full flexcc"
-          ><span class="bg-black/50 px1 rounded-[3px]">Name taken</span></div
         >
+          <span class="bg-black/50 px1 rounded-[3px]">Name taken</span>
+        </div>
       {/if}
     </div>
   {:else}
     <button
       onmousedown={(ev) => ev.stopPropagation()}
       class="cursor-text whitespace-nowrap overflow-hidden text-ellipsis"
-      onclick={edit}>{name}</button
+      onclick={edit}
     >
+      {name}
+    </button>
   {/if}
   <div class="flex-grow"></div>
   {#if onToggleCode}
@@ -130,7 +137,9 @@
       onblur={() => onPreviewBodyStateChange?.('code', false)}
       onmouseover={() => onPreviewBodyStateChange?.('code', true)}
       onmouseout={() => onPreviewBodyStateChange?.('code', false)}
-      onclick={(ev) => onToggleCode(ev)}><CodeIcon class="h3.5" /></button
+      onclick={(ev) => onToggleCode(ev)}
     >
+      <CodeIcon class="h3.5" />
+    </button>
   {/if}
 </div>

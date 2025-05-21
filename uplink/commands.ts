@@ -8,6 +8,8 @@ import {
 } from 'fs/promises'
 import { join } from 'path'
 
+const LAND_ROOT = 'land'
+
 async function ping<T>(msg?: T): Promise<['pong', T | undefined]> {
   return ['pong', msg]
 }
@@ -77,49 +79,37 @@ async function writeFile(fileName: string, content: UplinkFile) {
   return true
 }
 
+const exists = async (p: string) =>
+  stat(p)
+    .then(() => true)
+    .catch((e) => e.code !== 'ENOENT' && Promise.reject(e))
+
 async function renameFrameComponent(name: string, newName: string) {
-  const framesDir = 'frames'
-
   // Build absolute/relative paths once.
-  const oldSvelte = join(framesDir, `${name}.svelte`)
-  const newSvelte = join(framesDir, `${newName}.svelte`)
-  const oldMeta = join(framesDir, `${name}.meta.json`)
-  const newMeta = join(framesDir, `${newName}.meta.json`)
+  const oldSvelte = join(LAND_ROOT, `${name}.svelte`)
+  const newSvelte = join(LAND_ROOT, `${newName}.svelte`)
+  const oldMeta = join(LAND_ROOT, `${name}.meta.json`)
+  const newMeta = join(LAND_ROOT, `${newName}.meta.json`)
+  const oldFolder = join(LAND_ROOT, name)
+  const newFolder = join(LAND_ROOT, newName)
 
-  // ── 1. Guard: bail if new component already exists ───────────────
-  const exists = async (p: string) =>
-    stat(p)
-      .then(() => true)
-      .catch((e) => e.code !== 'ENOENT' && Promise.reject(e))
-
-  if ((await exists(newSvelte)) || (await exists(newMeta))) {
+  if (
+    (await exists(newSvelte)) ||
+    (await exists(newMeta)) ||
+    (await exists(newFolder))
+  ) {
     throw new Error(`A frame called “${newName}” already exists.`)
   }
 
   // ── 2. Rename both artefacts (this will throw if originals missing) ─
-  await fsRename(oldSvelte, newSvelte)
-  await fsRename(oldMeta, newMeta)
-
-  // ── 3. Patch meta file if it hard-codes the old name ───────────────
-  try {
-    const raw = await fsReadFile(newMeta, 'utf8')
-    const meta = JSON.parse(raw)
-
-    let changed = false
-    if (meta.name === name) {
-      meta.name = newName
-      changed = true
-    }
-    if (meta.component === name) {
-      meta.component = newName
-      changed = true
-    }
-
-    if (changed) {
-      await Bun.write(newMeta, JSON.stringify(meta, null, 2))
-    }
-  } catch {
-    /* if parsing fails we simply leave the file untouched */
+  if (await exists(oldSvelte)) {
+    await fsRename(oldSvelte, newSvelte)
+  }
+  if (await exists(oldMeta)) {
+    await fsRename(oldMeta, newMeta)
+  }
+  if (await exists(oldFolder)) {
+    await fsRename(oldFolder, newFolder)
   }
 
   return true // keeps the command API consistent with writeFile()
@@ -130,12 +120,11 @@ async function createFrameComponent(
   meta: string,
   component: string,
 ) {
-  const framesDir = 'frames'
-  const sveltePath = join(framesDir, `${name}.svelte`)
-  const metaPath = join(framesDir, `${name}.meta.json`)
+  const sveltePath = join(LAND_ROOT, `${name}.svelte`)
+  const metaPath = join(LAND_ROOT, `${name}.meta.json`)
 
   // 1. Ensure frames/ exists.
-  await mkdir(framesDir, { recursive: true })
+  await mkdir(LAND_ROOT, { recursive: true })
 
   // 2. Guard: abort if either target file already exists.
   const exists = async (p: string) =>
@@ -155,12 +144,13 @@ async function createFrameComponent(
 }
 
 async function removeFrameComponent(name: string) {
-  const framesDir = 'frames'
-  const sveltePath = join(framesDir, `${name}.svelte`)
-  const metaPath = join(framesDir, `${name}.meta.json`)
+  const sveltePath = join(LAND_ROOT, `${name}.svelte`)
+  const metaPath = join(LAND_ROOT, `${name}.meta.json`)
+  const folderPath = join(LAND_ROOT, name)
 
-  await fsRemove(sveltePath)
-  await fsRemove(metaPath)
+  if (await exists(sveltePath)) await fsRemove(sveltePath)
+  if (await exists(metaPath)) await fsRemove(metaPath)
+  if (await exists(folderPath)) await fsRemove(folderPath)
 
   return true
 }

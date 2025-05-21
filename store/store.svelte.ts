@@ -105,12 +105,7 @@ function createStore(...storeConfig: StoreConfig) {
           showCodeBox: false,
           data: {},
         }
-        await uplink(
-          'createFrameComponent',
-          cmd[1],
-          JSON.stringify(meta, null, 2),
-          noteTemplate,
-        )
+        await framesComponents.create(cmd[1], meta, noteTemplate)
         creatingFrame = null
         break
       }
@@ -384,9 +379,10 @@ function createStore(...storeConfig: StoreConfig) {
   // ╚═╝     ╚═╝     ╚═════╝ ╚═╝
 
   async function mouseup(
-    ev: MouseEvent | TouchEvent,
+    ev2: MouseEvent | TouchEvent,
     ...cmd: [target: 'space']
   ) {
+    const ev = wrapEv(ev2)
     console.log('🔴 M UP', (ev as MouseEvent).button || -1, cmd)
 
     switch (cmd[0]) {

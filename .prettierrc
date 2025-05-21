@@ -10,7 +10,7 @@
   "bracketSpacing": true,
   "arrowParens": "always",
   "proseWrap": "always",
-  "htmlWhitespaceSensitivity": "strict",
+  "htmlWhitespaceSensitivity": "ignore",
   "plugins": [],
   "endOfLine": "auto",
   "importOrder": ["holochain|lightningrodlabs", "^~\/(.*)$", "^[./]"],
