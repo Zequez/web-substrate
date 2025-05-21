@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Meta } from '../store/meta.ts'
+  import type { FrameBody, Meta } from '../store/framesComponents.svelte.ts'
   import MinusIcon from '~icons/fa6-solid/minus'
   // import CubeIcon from '~icons/fa6-solid/cube'
 
@@ -19,31 +19,50 @@
 
   let previewCode = $state<boolean>(false)
 
-  const mainBox = $derived(
-    S.dragState.type === 'moveFrame' &&
-      S.dragState.name === name &&
-      S.dragState.body === 'main'
-      ? S.dragState.resultingBox
-      : S.dragState.type === 'resizeFrame' &&
-          S.dragState.name === name &&
-          S.dragState.body === 'main'
-        ? S.dragState.resultingBox
-        : meta.box,
-  )
+  const boxes = $derived({
+    main: meta.bodies.main.box,
+    code: meta.bodies.code.box,
+    inner: meta.bodies.inner.box,
+    ...((S.dragState.type === 'moveFrame' ||
+      S.dragState.type === 'resizeFrame') &&
+    S.dragState.name === name
+      ? {
+          [S.dragState.body]: S.dragState.resultingBox,
+        }
+      : {}),
+  })
 
-  const codeBox = $derived(
-    S.dragState.type === 'moveFrame' &&
-      S.dragState.name === name &&
-      S.dragState.body === 'code'
-      ? S.dragState.resultingBox
-      : S.dragState.type === 'resizeFrame' &&
-          S.dragState.name === name &&
-          S.dragState.body === 'code'
-        ? S.dragState.resultingBox
-        : meta.codeBox,
-  )
+  const bodiesVisibility = $derived({
+    main: meta.bodies.main.visible,
+    code: meta.bodies.code.visible,
+    inner: meta.bodies.inner.visible,
+  })
 
-  let focusedBody = $derived<'main' | 'code' | null>(
+  // const mainBox = $derived(
+  //   S.dragState.type === 'moveFrame' &&
+  //     S.dragState.name === name &&
+  //     S.dragState.body === 'main'
+  //     ? S.dragState.resultingBox
+  //     : S.dragState.type === 'resizeFrame' &&
+  //         S.dragState.name === name &&
+  //         S.dragState.body === 'main'
+  //       ? S.dragState.resultingBox
+  //       : meta.bodies.main.box,
+  // )
+
+  // const codeBox = $derived(
+  //   S.dragState.type === 'moveFrame' &&
+  //     S.dragState.name === name &&
+  //     S.dragState.body === 'code'
+  //     ? S.dragState.resultingBox
+  //     : S.dragState.type === 'resizeFrame' &&
+  //         S.dragState.name === name &&
+  //         S.dragState.body === 'code'
+  //       ? S.dragState.resultingBox
+  //       : meta.bodies.code.box,
+  // )
+
+  let focusedBody = $derived<'main' | 'code' | 'inner' | null>(
     S.focusedFrame
       ? S.focusedFrame[0] === name
         ? S.focusedFrame[1]
@@ -94,7 +113,9 @@
                                  -->
 
 <div
-  style={S.space.boxStyle(mainBox)}
+  style={bodiesVisibility.main
+    ? S.space.boxStyle(boxes.main)
+    : S.space.boxStyle({ ...boxes.main, h: 1 })}
   class={cx('absolute group/frame rounded-md', {
     'shadow-[0_0_0_3.5px_rgba(0,0,0,0.6)] shadow-blue-500':
       focusedBody === 'main',
@@ -105,37 +126,41 @@
     namesTaken={Object.keys(S.framesComponents).filter((n) => n !== name)}
     {name}
     onNameChange={(newName) => S.cmd('rename-frame', name, newName)}
-    onToggleCode={(ev) => S.ev.click(ev, 'frameCodingToggle', name)}
+    onToggleBody={(ev, body, value) =>
+      S.ev.click(ev, 'setBodyVisibility', name, body, value)}
+    {bodiesVisibility}
     onDragStart={(ev) => S.ev.mousedown(ev, 'frameDragHandle', name, 'main')}
-    onPreviewBodyStateChange={(body: 'main' | 'code', state: boolean) => {
+    onPreviewBodyStateChange={(body: FrameBody, state: boolean) => {
       if (body === 'code') {
         previewCode = state
       }
     }}
     focusHighlight={focusedBody === 'main'}
   />
-  <div
-    class="absolute w-full bottom-0"
-    role="presentation"
-    onmousedown={(ev) => ev.stopPropagation()}
-    onkeydown={(ev) => ev.stopPropagation()}
-    onkeyup={(ev) => ev.stopPropagation()}
-    style={`top: ${S.space.grid.size}px;`}
-  >
-    <Component
-      data={meta.data}
-      onDataChange={(newData: any) => S.cmd('set-data', name, newData)}
+  {#if bodiesVisibility.main}
+    <div
+      class="absolute w-full bottom-0"
+      role="presentation"
+      onmousedown={(ev) => ev.stopPropagation()}
+      onkeydown={(ev) => ev.stopPropagation()}
+      onkeyup={(ev) => ev.stopPropagation()}
+      style={`top: ${S.space.grid.size}px;`}
+    >
+      <Component
+        data={meta.data}
+        onDataChange={(newData: any) => S.cmd('set-data', name, newData)}
+      />
+    </div>
+    <ResizeHandles
+      holding={S.dragState.type === 'resizeFrame' &&
+      S.dragState.body === 'main' &&
+      S.dragState.name === name
+        ? S.dragState.handler
+        : null}
+      onMouseDown={(ev, handle) =>
+        S.ev.mousedown(ev, 'resizeHandler', name, 'main', handle)}
     />
-  </div>
-  <ResizeHandles
-    holding={S.dragState.type === 'resizeFrame' &&
-    S.dragState.body === 'main' &&
-    S.dragState.name === name
-      ? S.dragState.handler
-      : null}
-    onMouseDown={(ev, handle) =>
-      S.ev.mousedown(ev, 'resizeHandler', name, 'main', handle)}
-  />
+  {/if}
 </div>
 
 <!--
@@ -147,11 +172,12 @@
  ╚═════╝ ╚═════╝ ╚═════╝ ╚══════╝
                                   -->
 
-{#if meta.showCodeBox || previewCode}
+{#if meta.bodies.code.visible || previewCode}
   <div
-    style={S.space.boxStyle(codeBox)}
+    style={S.space.boxStyle(boxes.code)}
     class={cx('absolute group/frame z-1000 flex flex-col rounded-md', {
-      'opacity-50 pointer-events-none': !meta.showCodeBox && previewCode,
+      'opacity-50 pointer-events-none':
+        !meta.bodies.code.visible && previewCode,
       'shadow-[0_0_0_3.5px_rgba(59,130,246,255)]': focusedBody === 'code',
     })}
     role="presentation"
@@ -169,16 +195,19 @@
         },
       )}
     >
-      <div class="flex-grow"
-        ><span class="opacity-50 font-bold">&lt;</span><span class="mx.5"
-          >{name}</span
-        ><span class="opacity-50 font-bold">&gt;</span>
+      <div class="flex-grow flex">
+        <span class="opacity-50 font-bold">&lt;</span>
+        <span class="mx.5">{name}</span>
+        <span class="opacity-50 font-bold">&gt;</span>
       </div>
       <button
         class="hover:text-red-700"
-        onclick={(ev) => S.ev.click(ev, 'frameCodingToggle', name)}
-        onmousedown={(ev) => ev.stopPropagation()}><MinusIcon /></button
+        onclick={(ev) =>
+          S.ev.click(ev, 'setBodyVisibility', name, 'code', false)}
+        onmousedown={(ev) => ev.stopPropagation()}
       >
+        <MinusIcon />
+      </button>
     </div>
     <div
       bind:this={codeInputEl}
@@ -207,8 +236,10 @@
           {
             'pointer-events-none': S.dragState.type === 'resizeFrame',
           },
-        )}>Save (Cmd+S)</button
+        )}
       >
+        Save (Cmd+S)
+      </button>
     </div>
     <ResizeHandles
       holding={S.dragState.type === 'resizeFrame' &&
@@ -218,6 +249,37 @@
         : null}
       onMouseDown={(ev, handle) =>
         S.ev.mousedown(ev, 'resizeHandler', name, 'code', handle)}
+    />
+  </div>
+{/if}
+
+<!--
+██╗███╗   ██╗███╗   ██╗███████╗██████╗
+██║████╗  ██║████╗  ██║██╔════╝██╔══██╗
+██║██╔██╗ ██║██╔██╗ ██║█████╗  ██████╔╝
+██║██║╚██╗██║██║╚██╗██║██╔══╝  ██╔══██╗
+██║██║ ╚████║██║ ╚████║███████╗██║  ██║
+╚═╝╚═╝  ╚═══╝╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝
+                                        -->
+
+{#if meta.bodies.inner.visible}
+  <div
+    class="absolute b-5 b-green-500 bg-green-600 shadow-inner rounded-md cursor-move"
+    style={S.space.boxStyle(boxes.inner)}
+    role="presentation"
+    onmousedown={(ev) => S.ev.mousedown(ev, 'frameDragHandle', name, 'inner')}
+  >
+    <div class="text-white bg-black/10 absolute top-0 left-0 rounded-br-md px2">
+      {name}
+    </div>
+    <ResizeHandles
+      holding={S.dragState.type === 'resizeFrame' &&
+      S.dragState.body === 'inner' &&
+      S.dragState.name === name
+        ? S.dragState.handler
+        : null}
+      onMouseDown={(ev, handle) =>
+        S.ev.mousedown(ev, 'resizeHandler', name, 'inner', handle)}
     />
   </div>
 {/if}

@@ -10,14 +10,15 @@ import {
   type Box,
 } from './box'
 import spaceStore from './space.svelte'
-import { createFramesComponentsStore } from './framesComponents.svelte'
+import {
+  createFramesComponentsStore,
+  type Meta,
+  type FrameBody,
+} from './framesComponents.svelte'
 import type { BoxResizeHandles } from './box'
-import type { Meta } from './meta'
 import noteTemplate from '../templates/note.svelte?raw'
 
 type StoreConfig = []
-
-export type FrameBody = 'main' | 'code'
 
 function createStore(...storeConfig: StoreConfig) {
   let space = spaceStore({ centerAt: null })
@@ -36,15 +37,15 @@ function createStore(...storeConfig: StoreConfig) {
       frameBoxes.push([
         name,
         'main',
-        boxCenter(frame.meta.box),
-        boxSurface(frame.meta.box),
+        boxCenter(frame.meta.bodies.main.box),
+        boxSurface(frame.meta.bodies.main.box),
       ])
-      if (frame.meta.showCodeBox) {
+      if (frame.meta.bodies.code.visible) {
         frameBoxes.push([
           name,
           'code',
-          boxCenter(frame.meta.codeBox),
-          boxSurface(frame.meta.codeBox),
+          boxCenter(frame.meta.bodies.code.box),
+          boxSurface(frame.meta.bodies.code.box),
         ])
       }
     })
@@ -94,15 +95,26 @@ function createStore(...storeConfig: StoreConfig) {
       case 'commit-creating-frame': {
         if (!creatingFrame) return
         const meta: Meta = {
-          box: creatingFrame.box,
-          updatedAt: Date.now(),
-          codeBox: {
-            x: creatingFrame.box.x + creatingFrame.box.w,
-            y: creatingFrame.box.y,
-            w: creatingFrame.box.w,
-            h: creatingFrame.box.h,
+          bodies: {
+            main: {
+              box: creatingFrame.box,
+              visible: true,
+            },
+            code: {
+              box: {
+                x: creatingFrame.box.x + creatingFrame.box.w,
+                y: creatingFrame.box.y,
+                w: creatingFrame.box.w,
+                h: creatingFrame.box.h,
+              },
+              visible: true,
+            },
+            inner: {
+              box: creatingFrame.box,
+              visible: false,
+            },
           },
-          showCodeBox: false,
+          updatedAt: Date.now(),
           data: {},
         }
         await framesComponents.create(cmd[1], meta, noteTemplate)
@@ -129,7 +141,7 @@ function createStore(...storeConfig: StoreConfig) {
       case 'zoom-to-fit': {
         const [name, body] = cmd[1]
         const comp = framesComponents.all[name]
-        const box = body === 'main' ? comp.meta.box : comp.meta.codeBox
+        const box = comp.meta.bodies[body].box
         space.cmd.setZoomToFitBox(box)
         // space.zoomToBox(framesComponents.all[name][body].meta.box)
         break
@@ -278,7 +290,7 @@ function createStore(...storeConfig: StoreConfig) {
             body: cmd[2],
             start: space.mouseToGridPos(ev.clientX, ev.clientY),
             resultingBox: {
-              ...(cmd[2] === 'main' ? comp.meta.box : comp.meta.codeBox),
+              ...comp.meta.bodies[cmd[2]].box,
             },
             moved: false,
           }
@@ -295,7 +307,7 @@ function createStore(...storeConfig: StoreConfig) {
           handler: cmd[3],
           gridPosStart: space.mouseToGridPos(ev.clientX, ev.clientY),
           resultingBox: {
-            ...(cmd[2] === 'main' ? comp.meta.box : comp.meta.codeBox),
+            ...comp.meta.bodies[cmd[2]].box,
           },
         }
       }
@@ -349,8 +361,7 @@ function createStore(...storeConfig: StoreConfig) {
             const dy = dragState.start[1] - y
 
             const comp = framesComponents.all[dragState.name]
-            const box =
-              dragState.body === 'main' ? comp.meta.box : comp.meta.codeBox
+            const box = comp.meta.bodies[dragState.body].box
             dragState.resultingBox.x = box.x - dx
             dragState.resultingBox.y = box.y - dy
             dragState.moved = true
@@ -362,8 +373,7 @@ function createStore(...storeConfig: StoreConfig) {
             const dy = currentPos[1] - dragState.gridPosStart[1]
 
             const comp = framesComponents.all[dragState.name]
-            const box =
-              dragState.body === 'main' ? comp.meta.box : comp.meta.codeBox
+            const box = comp.meta.bodies[dragState.body].box
             dragState.resultingBox = resizeBox(dragState.handler, box, dx, dy)
           }
         }
@@ -416,26 +426,20 @@ function createStore(...storeConfig: StoreConfig) {
               ) {
                 framesComponents.remove(dragState.name)
               } else {
-                framesComponents.updateMeta(
+                framesComponents.updateBodyBox(
                   dragState.name,
-                  dragState.body === 'main'
-                    ? {
-                        box: dragState.resultingBox,
-                      }
-                    : {
-                        codeBox: dragState.resultingBox,
-                      },
+                  dragState.body,
+                  dragState.resultingBox,
                 )
               }
             }
             break
           }
           case 'resizeFrame': {
-            framesComponents.updateMeta(
+            framesComponents.updateBodyBox(
               dragState.name,
-              dragState.body === 'main'
-                ? { box: dragState.resultingBox }
-                : { codeBox: dragState.resultingBox },
+              dragState.body,
+              dragState.resultingBox,
             )
             break
           }
@@ -473,15 +477,18 @@ function createStore(...storeConfig: StoreConfig) {
 
   async function click(
     ev: MouseEvent,
-    ...cmd: [target: 'frameCodingToggle', name: string]
+    ...cmd: [
+      target: 'setBodyVisibility',
+      name: string,
+      body: FrameBody,
+      visible: boolean,
+    ]
   ) {
     console.log('🔵 CLICK', ev.button, cmd)
 
     switch (cmd[0]) {
-      case 'frameCodingToggle': {
-        framesComponents.updateMeta(cmd[1], {
-          showCodeBox: !framesComponents.all[cmd[1]].meta.showCodeBox,
-        })
+      case 'setBodyVisibility': {
+        framesComponents.updateBodyVisibility(cmd[1], cmd[2], cmd[3])
         break
       }
     }

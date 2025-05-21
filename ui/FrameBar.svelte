@@ -1,7 +1,10 @@
 <script lang="ts">
   import CodeIcon from '~icons/fa6-solid/code'
+  import InnerIcon from '~icons/fa6-solid/shapes'
+  import MainIcon from '~icons/fa6-solid/layer-group'
   import SS from '../store/store.svelte.ts'
   import { cx } from '../center/snippets/utils.ts'
+  import type { FrameBody } from '../store/framesComponents.svelte.ts'
 
   const gridSize = SS.store.space.grid.size
 
@@ -11,7 +14,8 @@
     namesTaken,
     onNameChange,
     onCancelNameChange,
-    onToggleCode,
+    onToggleBody,
+    bodiesVisibility,
     onDragStart,
     onPreviewBodyStateChange,
     focusHighlight,
@@ -21,9 +25,10 @@
     namesTaken: string[]
     onCancelNameChange?: () => void
     onNameChange: (newName: string) => void
-    onToggleCode?: (ev: MouseEvent) => void
+    onToggleBody: (ev: MouseEvent, body: FrameBody, value: boolean) => void
+    bodiesVisibility: Record<FrameBody, boolean>
     onDragStart?: (ev: MouseEvent) => void
-    onPreviewBodyStateChange?: (body: 'main' | 'code', state: boolean) => void
+    onPreviewBodyStateChange?: (body: FrameBody, state: boolean) => void
     focusHighlight?: boolean
   } = $props()
 
@@ -73,6 +78,7 @@
       'cursor-move': !!onDragStart,
       'bg-blue-300': focusHighlight,
       'bg-blue-100': !focusHighlight,
+      'rounded-b-md': !bodiesVisibility.main,
     },
   )}
   style={`height: ${gridSize}px;`}
@@ -129,17 +135,34 @@
     </button>
   {/if}
   <div class="flex-grow"></div>
-  {#if onToggleCode}
-    <button
-      class="hover:text-green-6"
-      onmousedown={(ev) => ev.stopPropagation()}
-      onfocus={() => onPreviewBodyStateChange?.('code', true)}
-      onblur={() => onPreviewBodyStateChange?.('code', false)}
-      onmouseover={() => onPreviewBodyStateChange?.('code', true)}
-      onmouseout={() => onPreviewBodyStateChange?.('code', false)}
-      onclick={(ev) => onToggleCode(ev)}
-    >
-      <CodeIcon class="h3.5" />
-    </button>
+  {#if onToggleBody}
+    {#snippet bodyToggle(body: FrameBody, Icon: any)}
+      <button
+        class={cx('hover:text-green-6 relative flexcc', {
+          'text-green-500': bodiesVisibility[body],
+          'text-black/50': !bodiesVisibility[body],
+        })}
+        onmousedown={(ev) => ev.stopPropagation()}
+        onfocus={() => onPreviewBodyStateChange?.(body, true)}
+        onblur={() => onPreviewBodyStateChange?.(body, false)}
+        onmouseover={() => onPreviewBodyStateChange?.(body, true)}
+        onmouseout={() => onPreviewBodyStateChange?.(body, false)}
+        onclick={(ev) => onToggleBody(ev, body, !bodiesVisibility[body])}
+      >
+        <Icon class="h3.5 relative z-10" />
+        {#if bodiesVisibility[body]}
+          <div class="absolute z-5 inset-0 flexcc text-green-400">
+            <Icon class="h3.5 filter-blur-[3px]" />
+          </div>
+          <div class="absolute z-8 inset-0 flexcc text-black/70 scale-108">
+            <Icon class="h3.5 " />
+          </div>
+        {/if}
+      </button>
+    {/snippet}
+
+    {@render bodyToggle('main', MainIcon)}
+    {@render bodyToggle('code', CodeIcon)}
+    {@render bodyToggle('inner', InnerIcon)}
   {/if}
 </div>

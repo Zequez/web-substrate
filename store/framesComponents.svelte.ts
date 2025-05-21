@@ -15,30 +15,35 @@ const svelteRawFiles = import.meta.glob('../land/**/*.svelte', {
   query: '?raw',
 })
 
-type Meta = {
-  box: Box
+export type Meta = {
   updatedAt: number
-  codeBox: Box
-  showCodeBox: boolean
   data: any
-  // bodies: {
-  //   main: Box,
-  //   code: Box
-  // },
-  // showBodies: {
-  //   main: boolean,
-  //   code: boolean
-  // }
+  bodies: {
+    main: {
+      box: Box
+      visible: boolean
+    }
+    code: {
+      box: Box
+      visible: boolean
+    }
+    inner: {
+      box: Box
+      visible: boolean
+    }
+  }
 }
 
-type Frame = {
+export type FrameBody = 'main' | 'code' | 'inner'
+
+export type Frame = {
   meta: Meta
   Component: Component
   code: string
   inner: FrameLand
 }
 
-type FrameLand = { [key: string]: Frame }
+export type FrameLand = { [key: string]: Frame }
 
 const rootFrame: Frame = createEmptyFrame()
 
@@ -150,10 +155,21 @@ function createEmptyFrame(): Frame {
 
 function defaultMeta(): Meta {
   return {
-    box: { x: 0, y: 0, w: 5, h: 5 },
+    bodies: {
+      main: {
+        box: { x: 0, y: 0, w: 5, h: 5 },
+        visible: true,
+      },
+      code: {
+        box: { x: 0, y: 0, w: 5, h: 5 },
+        visible: true,
+      },
+      inner: {
+        box: { x: 0, y: 0, w: 5, h: 5 },
+        visible: true,
+      },
+    },
     updatedAt: 0,
-    codeBox: { x: 5, y: 0, w: 5, h: 5 },
-    showCodeBox: true,
     data: null,
   }
 }
@@ -214,7 +230,29 @@ function createFramesComponentsStore() {
   async function updateMeta(path: string, meta: Partial<Meta>) {
     const frame = getLeaf(root, path)
     frame.meta = { ...frame.meta, ...meta }
-    await uplink('writeFile', `frames/${path}.meta.json`, {
+    await uplink('writeFile', `land/${path}.meta.json`, {
+      type: 'text',
+      data: JSON.stringify(frame.meta, null, 2),
+    })
+  }
+
+  async function updateBodyBox(path: string, body: FrameBody, box: Box) {
+    const frame = getLeaf(root, path)
+    frame.meta.bodies[body].box = box
+    await uplink('writeFile', `land/${path}.meta.json`, {
+      type: 'text',
+      data: JSON.stringify(frame.meta, null, 2),
+    })
+  }
+
+  async function updateBodyVisibility(
+    path: string,
+    body: FrameBody,
+    visible: boolean,
+  ) {
+    const frame = getLeaf(root, path)
+    frame.meta.bodies[body].visible = visible
+    await uplink('writeFile', `land/${path}.meta.json`, {
       type: 'text',
       data: JSON.stringify(frame.meta, null, 2),
     })
@@ -242,10 +280,10 @@ function createFramesComponentsStore() {
   async function updateCode(path: string, code: string) {
     const frame = getLeaf(root, path)
     frame.code = code
-    // await uplink('writeFile', `frames/${name}.svelte`, {
-    //   type: 'text',
-    //   data: code,
-    // })
+    await uplink('writeFile', `land/${path}.svelte`, {
+      type: 'text',
+      data: code,
+    })
   }
 
   return {
@@ -253,6 +291,8 @@ function createFramesComponentsStore() {
       return lands
     },
     updateMeta,
+    updateBodyBox,
+    updateBodyVisibility,
     updateCode,
     create,
     rename,
