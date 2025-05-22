@@ -4,7 +4,7 @@
   import MainIcon from '~icons/fa6-solid/layer-group'
   import SS from '../store/store.svelte.ts'
   import { cx } from '../center/snippets/utils.ts'
-  import type { FrameBody } from '../store/framesComponents.svelte.ts'
+  import type { FrameBody } from '../store/lands-types'
 
   const gridSize = SS.store.space.grid.size
 
@@ -25,7 +25,7 @@
     namesTaken: string[]
     onCancelNameChange?: () => void
     onNameChange: (newName: string) => void
-    onToggleBody: (ev: MouseEvent, body: FrameBody, value: boolean) => void
+    onToggleBody?: (ev: MouseEvent, body: FrameBody, value: boolean) => void
     bodiesVisibility: Record<FrameBody, boolean>
     onDragStart?: (ev: MouseEvent) => void
     onPreviewBodyStateChange?: (body: FrameBody, state: boolean) => void

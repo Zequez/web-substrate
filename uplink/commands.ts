@@ -150,7 +150,7 @@ async function removeFrameComponent(name: string) {
 
   if (await exists(sveltePath)) await fsRemove(sveltePath)
   if (await exists(metaPath)) await fsRemove(metaPath)
-  if (await exists(folderPath)) await fsRemove(folderPath)
+  if (await exists(folderPath)) await fsRemove(folderPath, { recursive: true })
 
   return true
 }

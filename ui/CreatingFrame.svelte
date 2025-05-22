@@ -12,6 +12,7 @@
   <FrameBar
     startFocused={true}
     name={''}
+    bodiesVisibility={{ main: true, code: false, inner: false }}
     namesTaken={Object.keys(S.framesComponents)}
     onCancelNameChange={() => S.cmd('cancel-creating-frame')}
     onNameChange={(newName) => S.cmd('commit-creating-frame', newName)}

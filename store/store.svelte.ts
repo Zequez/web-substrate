@@ -9,31 +9,32 @@ import {
   resizeBox,
   type Box,
 } from './box'
+import { type Meta } from './lands-types'
 import spaceStore from './space.svelte'
-import {
-  createFramesComponentsStore,
-  type Meta,
-  type FrameBody,
-} from './framesComponents.svelte'
+import { type FrameBody } from './lands-types'
+import landsStore from './lands.svelte'
 import type { BoxResizeHandles } from './box'
 import noteTemplate from '../templates/note.svelte?raw'
 
-type StoreConfig = []
+type StoreConfig = { at: string }
 
-function createStore(...storeConfig: StoreConfig) {
+function createStore(config: StoreConfig) {
+  let lands = landsStore.landsStore
   let space = spaceStore({ centerAt: null })
-  let framesComponents = createFramesComponentsStore()
+  let localLand = $derived(lands.at(config.at))
+  let localFrames = $derived(localLand.all)
   let creatingFrame = $state<{
     box: Box
     timestamp: number
   } | null>(null)
   let focusedFrame = $state<[string, FrameBody] | null>(null)
   let navigationMode = $state<'hand' | 'focus'>('hand')
+  let landPath = $state<string[]>(config.at.split('/'))
 
   let focusablePoints = $derived.by(() => {
     let frameBoxes: [string, FrameBody, pos: [number, number], mass: number][] =
       []
-    Object.entries(framesComponents.all).forEach(([name, frame]) => {
+    Object.entries(localFrames).forEach(([name, frame]) => {
       frameBoxes.push([
         name,
         'main',
@@ -84,7 +85,7 @@ function createStore(...storeConfig: StoreConfig) {
       }
       case 'rename-frame': {
         if (cmd[1] !== cmd[2]) {
-          framesComponents.rename(cmd[1], cmd[2])
+          localLand.rename(cmd[1], cmd[2])
         }
         break
       }
@@ -117,17 +118,17 @@ function createStore(...storeConfig: StoreConfig) {
           updatedAt: Date.now(),
           data: {},
         }
-        await framesComponents.create(cmd[1], meta, noteTemplate)
+        await localLand.create(cmd[1], meta, noteTemplate)
         creatingFrame = null
         break
       }
 
       case 'save-code': {
-        framesComponents.updateCode(cmd[1], cmd[2])
+        localLand.updateCode(cmd[1], cmd[2])
         break
       }
       case 'set-data': {
-        framesComponents.updateMeta(cmd[1], { data: cmd[2] })
+        localLand.updateMeta(cmd[1], { data: cmd[2] })
         break
       }
       case 'exit-focus-mode': {
@@ -140,7 +141,7 @@ function createStore(...storeConfig: StoreConfig) {
       }
       case 'zoom-to-fit': {
         const [name, body] = cmd[1]
-        const comp = framesComponents.all[name]
+        const comp = localFrames[name]
         const box = comp.meta.bodies[body].box
         space.cmd.setZoomToFitBox(box)
         // space.zoomToBox(framesComponents.all[name][body].meta.box)
@@ -283,7 +284,7 @@ function createStore(...storeConfig: StoreConfig) {
       case 'frameDragHandle': {
         if (ev.button === 0) {
           ev.stopPropagation()
-          const comp = framesComponents.all[cmd[1]]
+          const comp = localFrames[cmd[1]]
           dragState = {
             type: 'moveFrame',
             name: cmd[1],
@@ -299,7 +300,7 @@ function createStore(...storeConfig: StoreConfig) {
       }
       case 'resizeHandler': {
         ev.stopPropagation()
-        const comp = framesComponents.all[cmd[1]]
+        const comp = localFrames[cmd[1]]
         dragState = {
           type: 'resizeFrame',
           name: cmd[1],
@@ -360,7 +361,7 @@ function createStore(...storeConfig: StoreConfig) {
             const dx = dragState.start[0] - x
             const dy = dragState.start[1] - y
 
-            const comp = framesComponents.all[dragState.name]
+            const comp = localFrames[dragState.name]
             const box = comp.meta.bodies[dragState.body].box
             dragState.resultingBox.x = box.x - dx
             dragState.resultingBox.y = box.y - dy
@@ -372,7 +373,7 @@ function createStore(...storeConfig: StoreConfig) {
             const dx = currentPos[0] - dragState.gridPosStart[0]
             const dy = currentPos[1] - dragState.gridPosStart[1]
 
-            const comp = framesComponents.all[dragState.name]
+            const comp = localFrames[dragState.name]
             const box = comp.meta.bodies[dragState.body].box
             dragState.resultingBox = resizeBox(dragState.handler, box, dx, dy)
           }
@@ -424,9 +425,9 @@ function createStore(...storeConfig: StoreConfig) {
                 space.vp.screenH - ev.clientY <= 100 &&
                 dragState.body === 'main'
               ) {
-                framesComponents.remove(dragState.name)
+                localLand.remove(dragState.name)
               } else {
-                framesComponents.updateBodyBox(
+                localLand.updateBodyBox(
                   dragState.name,
                   dragState.body,
                   dragState.resultingBox,
@@ -436,7 +437,7 @@ function createStore(...storeConfig: StoreConfig) {
             break
           }
           case 'resizeFrame': {
-            framesComponents.updateBodyBox(
+            localLand.updateBodyBox(
               dragState.name,
               dragState.body,
               dragState.resultingBox,
@@ -488,7 +489,7 @@ function createStore(...storeConfig: StoreConfig) {
 
     switch (cmd[0]) {
       case 'setBodyVisibility': {
-        framesComponents.updateBodyVisibility(cmd[1], cmd[2], cmd[3])
+        localLand.updateBodyVisibility(cmd[1], cmd[2], cmd[3])
         break
       }
     }
@@ -507,7 +508,7 @@ function createStore(...storeConfig: StoreConfig) {
       return dragState
     },
     get framesComponents() {
-      return framesComponents.all
+      return localFrames
     },
     get creatingFrame() {
       return creatingFrame
@@ -526,8 +527,8 @@ function createStore(...storeConfig: StoreConfig) {
 }
 
 export default {
-  createStoreContext: (...storeConfig: StoreConfig) => {
-    const store = createStore(...storeConfig)
+  createStoreContext: (config: StoreConfig) => {
+    const store = createStore(config)
     setContext('main-store', store)
   },
   get store() {

@@ -1,21 +1,30 @@
 <script lang="ts">
-  import type { FrameBody, Meta } from '../store/framesComponents.svelte.ts'
+  import type { FrameBody, FrameLand, Meta } from '../store/lands-types'
   import MinusIcon from '~icons/fa6-solid/minus'
   // import CubeIcon from '~icons/fa6-solid/cube'
 
   import SS from '../store/store.svelte.ts'
+  import SSNV from '../store/land-navigation-store.svelte.ts'
   import ResizeHandles from './ResizeHandles.svelte'
   import FrameBar from './FrameBar.svelte'
   import { cx } from '../center/snippets/utils.ts'
 
   const S = SS.store
+  const SNV = SSNV.store
 
   const {
     name,
     meta,
     code,
+    inner,
     Component,
-  }: { name: string; code: string; meta: Meta; Component: any } = $props()
+  }: {
+    name: string
+    code: string
+    meta: Meta
+    Component: any
+    inner: FrameLand
+  } = $props()
 
   let previewCode = $state<boolean>(false)
 
@@ -264,13 +273,19 @@
 
 {#if meta.bodies.inner.visible}
   <div
-    class="absolute b-5 b-green-500 bg-green-600 shadow-inner rounded-md cursor-move"
+    class="absolute group/frame b-5 b-green-500 bg-green-600 shadow-inner rounded-md cursor-base"
     style={S.space.boxStyle(boxes.inner)}
     role="presentation"
     onmousedown={(ev) => S.ev.mousedown(ev, 'frameDragHandle', name, 'inner')}
+    ondblclick={(ev) => SNV.into(name)}
   >
     <div class="text-white bg-black/10 absolute top-0 left-0 rounded-br-md px2">
       {name}
+    </div>
+    <div>
+      {#each Object.entries(inner) as [name, frame]}
+        {name}
+      {/each}
     </div>
     <ResizeHandles
       holding={S.dragState.type === 'resizeFrame' &&

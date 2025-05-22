@@ -1,84 +1,47 @@
 <script lang="ts">
-  import SS from '../store/store.svelte.ts'
-  import Viewport from './Viewport.svelte'
-  import GridDisplay from './GridDisplay.svelte'
-  import Frame from './Frame.svelte'
-  import CreatingFrame from './CreatingFrame.svelte'
-  import TrashIcon from '~icons/fa6-solid/trash'
-  import FocusField from './FocusField.svelte'
-  import VirtualFocusField from './VirtualFocusField.svelte'
+  // import SS from '../store/store.svelte.ts'
+  import Land from './Land.svelte'
+  import landsStore from '../store/lands.svelte.ts'
+  import landNavigationStore from '../store/land-navigation-store.svelte.ts'
 
-  SS.createStoreContext()
-  const S = SS.store
+  landsStore.createLandsStoreContext({})
+  landNavigationStore.createContext({ initialPath: [] })
 
-  $effect(() => {
-    if (S.dragState) {
-      document.body.classList.add('select-none')
-    } else {
-      document.body.classList.remove('select-none')
-    }
-  })
+  const landNav = landNavigationStore.store
 </script>
 
-<GridDisplay
-  pos={S.space.pos}
-  vp={S.space.vp}
-  size={S.space.grid.size}
-  color={'#fff'}
-/>
-<VirtualFocusField
-  focusablePoints={S.focusablePoints}
-  onFocusChanges={(newFocus) => S.cmd('focus-frame', newFocus)}
-  initialCenter={S.space.screenCenter}
-  onCenterChanges={(c) => S.space.cmd.centerTo(c)}
-  onZoomToFit={(target) => S.cmd('zoom-to-fit', target)}
-  visualization={false}
-  focusedAt={S.focusedFrame}
-/>
-<!-- <FocusField
-  pos={S.space.pos}
-  vp={S.space.vp}
-  gridSize={S.space.grid.size}
-  focusablePoints={S.focusablePoints}
-  currentFocus={S.focusedFrame}
-/> -->
-{#if S.dragState.type === 'moveFrame'}
-  <div
-    class="absolute bottom-0 right-0 rounded-tl-lg h[100px] w[100px] bg-red-500 z-100 pointer-events-none flexcc text-[40px] text-white"
+{#snippet trail(text: string, nav: number)}
+  <button
+    class="relative overflow-hidden pr4 group -mr4"
+    onclick={() => landNav.up(landNav.path.length - nav)}
   >
-    <TrashIcon />
-  </div>
-{/if}
-<Viewport
-  viewportContext={{ depth: 0, parentPos: { x: 0, y: 0, z: 1 } }}
-  visualizeCenter={false}
->
-  {#each Object.entries(S.framesComponents) as [name, { meta, Component, code }] (name)}
-    <Frame {name} {code} {Component} {meta} />
-  {/each}
-  {#if S.dragState.type === 'createFrame'}
-    {#if S.dragState.resultingBox.w >= 3 && S.dragState.resultingBox.h >= 3}
+    <div class="bg-green-500 group-hover:bg-green-400 pl5 text-white">
+      <div class="relative z-10">{text}</div>
       <div
-        class="absolute bg-white/50 rounded-md b-3 b-blue-100"
-        style={S.space.boxStyle(S.dragState.resultingBox)}
-      >
-        <div
-          class="bg-blue-100 absolute top-0 w-full px2"
-          style={`height: ${S.space.grid.size - 3}px;`}
-        ></div>
-      </div>
-    {:else}
-      <div
-        class="absolute bg-white/30 rounded-md"
-        style={S.space.boxStyle(S.dragState.resultingBox)}
+        class="absolute z-5 right-2 top-0 rotate-45 bg-green-500 group-hover:(bg-green-400 b-green-600) b-t b-r b-green-700 h8 w8 -mt1"
       ></div>
-    {/if}
-  {/if}
+    </div>
+  </button>
+{/snippet}
 
-  <!-- CREATING FRAME -->
-  {#if S.creatingFrame}
-    {#key S.creatingFrame.timestamp}
-      <CreatingFrame box={S.creatingFrame.box} />
+<div class="flex flex-col h-full w-full">
+  <div class="flex h6 flex-shrink-0 bg-gray-200 b-b b-green-700">
+    {@render trail('Root', 0)}
+
+    {#each landNav.path as p, i}
+      {@render trail(p, i + 1)}
+    {/each}
+  </div>
+  <div class="flex flex-grow">
+    {#key landNav.path.join('/')}
+      <Land at={landNav.path.join('/')} />
     {/key}
-  {/if}
-</Viewport>
+  </div>
+</div>
+
+<!-- <div class="grid grid-cols-2 gap-2 w-full h-full absolute top-0 bg-red-500"> -->
+<!-- <Land at="" /> -->
+<!-- <Land at="ezequiel" />
+  <Land at="ezequiel/test" />
+  <Land at="example" /> -->
+<!-- </div> -->
