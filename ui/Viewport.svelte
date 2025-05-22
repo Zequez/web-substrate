@@ -100,8 +100,9 @@
   >
     <span
       class="bg-black/50 text-white rounded-md px1 py0.2 absolute top-1/2 left-full ml2 -translate-y-1/2"
-      >{SP.screenCenter.map(Math.round)}</span
     >
+      {SP.screenCenter.map(Math.round)}
+    </span>
   </div>
 {/if}
 
@@ -123,7 +124,7 @@
   })}
 >
   <!-- This centers the grid so that 0,0 is in the middle of the screen -->
-  <div role="presentation" class="absolute inset-0 cursor-">
+  <div role="presentation" class="absolute inset-0">
     <div
       class={cx('absolute top-0 left-0 size-full will-change-transform', {
         'z-frames-container': false,

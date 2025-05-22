@@ -1,9 +1,10 @@
-import { setContext, getContext } from 'svelte'
+import { setContext, getContext, onMount } from 'svelte'
 import { uplink } from '../uplink/client'
 import {
   boxCenter,
   boxIsBigEnough,
   boxSurface,
+  containingBox,
   findBoxInTheDirectionOf,
   pos2box,
   resizeBox,
@@ -15,10 +16,12 @@ import { type FrameBody } from './lands-types'
 import landsStore from './lands.svelte'
 import type { BoxResizeHandles } from './box'
 import noteTemplate from '../templates/note.svelte?raw'
+import SSNV from '../store/land-navigation-store.svelte.ts'
 
 type StoreConfig = { at: string }
 
 function createStore(config: StoreConfig) {
+  let SNV = SSNV.store
   let lands = landsStore.landsStore
   let space = spaceStore({ centerAt: null })
   let localLand = $derived(lands.at(config.at))
@@ -29,7 +32,31 @@ function createStore(config: StoreConfig) {
   } | null>(null)
   let focusedFrame = $state<[string, FrameBody] | null>(null)
   let navigationMode = $state<'hand' | 'focus'>('hand')
-  let landPath = $state<string[]>(config.at.split('/'))
+
+  const justVisibleBoxes = $derived(
+    Object.values(localFrames)
+      .map((f) => {
+        let visible = []
+        if (f.meta.bodies.code.visible) visible.push(f.meta.bodies.code.box)
+        if (f.meta.bodies.main.visible) visible.push(f.meta.bodies.main.box)
+        if (f.meta.bodies.inner.visible) visible.push(f.meta.bodies.inner.box)
+        return visible
+      })
+      .reduce((a, b) => a.concat(b), []),
+  )
+  const calculatedContainingBox = $derived(containingBox(justVisibleBoxes))
+
+  $effect(() => {
+    if (calculatedContainingBox) {
+      space.cmd.setMinZoomToFitBox(calculatedContainingBox)
+    }
+  })
+
+  onMount(() => {
+    if (calculatedContainingBox) {
+      space.cmd.fitBox(calculatedContainingBox)
+    }
+  })
 
   let focusablePoints = $derived.by(() => {
     let frameBoxes: [string, FrameBody, pos: [number, number], mass: number][] =
@@ -143,7 +170,7 @@ function createStore(config: StoreConfig) {
         const [name, body] = cmd[1]
         const comp = localFrames[name]
         const box = comp.meta.bodies[body].box
-        space.cmd.setZoomToFitBox(box)
+        space.cmd.fitBox(box)
         // space.zoomToBox(framesComponents.all[name][body].meta.box)
         break
       }
@@ -278,6 +305,8 @@ function createStore(config: StoreConfig) {
             resultingBox: { x: pos[0], y: pos[1], w: 1, h: 1 },
           }
           focusedFrame = null
+        } else if (ev.button === 2) {
+          SNV.up(1)
         }
         break
       }

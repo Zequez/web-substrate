@@ -8,6 +8,7 @@
   import ResizeHandles from './ResizeHandles.svelte'
   import FrameBar from './FrameBar.svelte'
   import { cx } from '../center/snippets/utils.ts'
+  import MiniMap from './MiniMap.svelte'
 
   const S = SS.store
   const SNV = SSNV.store
@@ -273,7 +274,7 @@
 
 {#if meta.bodies.inner.visible}
   <div
-    class="absolute group/frame b-5 b-green-500 bg-green-600 shadow-inner rounded-md cursor-base"
+    class="absolute group/frame b-5 b-green-700 bg-gray-900 shadow-inner rounded-md cursor-base"
     style={S.space.boxStyle(boxes.inner)}
     role="presentation"
     onmousedown={(ev) => S.ev.mousedown(ev, 'frameDragHandle', name, 'inner')}
@@ -282,10 +283,8 @@
     <div class="text-white bg-black/10 absolute top-0 left-0 rounded-br-md px2">
       {name}
     </div>
-    <div>
-      {#each Object.entries(inner) as [name, frame]}
-        {name}
-      {/each}
+    <div class="relative h-full w-full">
+      <MiniMap frames={inner} />
     </div>
     <ResizeHandles
       holding={S.dragState.type === 'resizeFrame' &&

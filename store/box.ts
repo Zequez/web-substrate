@@ -182,3 +182,31 @@ export function calculateClosestPoint(
 
   return closestPoint
 }
+
+export function containingBox(boxes: Box[], offset = 0): Box | null {
+  if (boxes.length === 0) return null
+
+  let tl: number
+  let tr: number
+  let bl: number
+  let br: number
+
+  boxes.forEach((b) => {
+    const Bl = b.x
+    const Br = b.x + b.w
+    const Bt = b.y
+    const Bb = b.y + b.h
+
+    if (Bl < tl || tl === undefined) tl = Bl
+    if (Bt < tr || tr === undefined) tr = Bt
+    if (Br > br || br === undefined) br = Br
+    if (Bb > bl || bl === undefined) bl = Bb
+  })
+
+  return {
+    x: tl! - offset,
+    y: tr! - offset,
+    w: br! - tl! + offset * 2,
+    h: bl! - tr! + offset * 2,
+  }
+}
