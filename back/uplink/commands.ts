@@ -155,6 +155,32 @@ async function removeFrameComponent(name: string) {
   return true
 }
 
+async function checkGit(landName: string) {
+  const landPath = join(LAND_ROOT, landName)
+  const gitPath = join(landPath, '.git')
+  return await exists(gitPath)
+}
+
+async function initGit(landName: string) {
+  const landPath = join(LAND_ROOT, landName)
+  await Bun.$`cd ${landPath} && git init`
+  return true
+}
+
+async function pushGit(landName: string) {
+  // const landPath = join(LAND_ROOT, landName)
+  // await Bun.$`cd ${landPath} && git add . && git commit -m "Built ${new Date().toISOString()}" && git push`
+  return true
+}
+
+async function buildWeb(landName: string) {
+  // const landPath = join(LAND_ROOT, landName)
+  // await Bun.$`cd ${landPath} && npx rollup -c`
+  return true
+}
+
+async function pushGitWeb(landName: string) {}
+
 export const cmds = {
   ping,
   filesList,
@@ -163,6 +189,12 @@ export const cmds = {
   renameFrameComponent,
   createFrameComponent,
   removeFrameComponent,
+
+  checkGit,
+  initGit,
+  pushGit,
+  buildWeb,
+  pushGitWeb,
 }
 
 export type UplinkCmd =
@@ -173,6 +205,8 @@ export type UplinkCmd =
   | ['renameFrameComponent', ...Parameters<typeof renameFrameComponent>]
   | ['createFrameComponent', ...Parameters<typeof createFrameComponent>]
   | ['removeFrameComponent', ...Parameters<typeof removeFrameComponent>]
+  | ['checkGit', ...Parameters<typeof checkGit>]
+  | ['initGit', ...Parameters<typeof initGit>]
 
 export type UplinkReturn<T extends UplinkCmd> = T extends [
   infer K extends keyof typeof cmds,

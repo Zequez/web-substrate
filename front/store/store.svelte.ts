@@ -1,5 +1,5 @@
 import { setContext, getContext, onMount } from 'svelte'
-import { uplink } from '../uplink/client'
+import { uplink } from '../../back/uplink/client.ts'
 import {
   boxCenter,
   boxIsBigEnough,
@@ -9,14 +9,14 @@ import {
   pos2box,
   resizeBox,
   type Box,
-} from './box'
-import { type Meta } from './lands-types'
-import spaceStore from './space.svelte'
-import { type FrameBody } from './lands-types'
-import landsStore from './lands.svelte'
-import type { BoxResizeHandles } from './box'
+} from './box.ts'
+import { type Meta } from './lands-types.ts'
+import spaceStore from './space.svelte.ts'
+import { type FrameBody } from './lands-types.ts'
+import landsStore from './lands.svelte.ts'
+import type { BoxResizeHandles } from './box.ts'
 import noteTemplate from '../templates/note.svelte?raw'
-import SSNV from '../store/land-navigation-store.svelte.ts'
+import SSNV from './land-navigation-store.svelte.ts'
 
 type StoreConfig = { at: string }
 

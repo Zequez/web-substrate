@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Pos, Viewport } from '../store/space.svelte'
-  import type { FrameBody } from '../store/store.svelte'
+  import type { FrameBody } from '../store/lands-types'
 
   const {
     pos,

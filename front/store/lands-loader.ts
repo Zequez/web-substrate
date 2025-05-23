@@ -7,14 +7,14 @@ import {
 } from './lands-types'
 import Empty from '../ui/Empty.svelte'
 
-const svelteCompiledFiles = import.meta.glob('../land/**/*.svelte', {
+const svelteCompiledFiles = import.meta.glob('@@/**/*.svelte', {
   eager: true,
 })
-const metaFiles = import.meta.glob('../land/**/*.meta.json', {
+const metaFiles = import.meta.glob('@@/**/*.meta.json', {
   eager: true,
 })
 
-const svelteRawFiles = import.meta.glob('../land/**/*.svelte', {
+const svelteRawFiles = import.meta.glob('@@/**/*.svelte', {
   eager: true,
   query: '?raw',
 })

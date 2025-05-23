@@ -1,4 +1,5 @@
 import type { UplinkCmd, UplinkReturn, UplinkFile } from './commands'
+import { UPLINK_PORT } from '../ports'
 
 // type UplinkCmd = any[]
 // type UplinkReturn<T> = any
@@ -15,7 +16,7 @@ async function uplink<T extends UplinkCmd>(
     return null!
   }
 
-  const response = await fetch(`http://localhost:18215`, {
+  const response = await fetch(`http://localhost:${UPLINK_PORT}`, {
     method: 'POST',
     body: JSON.stringify(cmd),
   })

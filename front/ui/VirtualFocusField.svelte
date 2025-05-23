@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte'
-  import type { FrameBody } from '../store/store.svelte'
+  import type { FrameBody } from '../store/lands-types'
   import { boxCenter, calculateClosestPoint } from '../store/box'
 
   let el = $state<HTMLCanvasElement>(null!)
@@ -263,6 +263,8 @@
 />
 
 {#if visualization}
-  <canvas class="size-full absolute top-0 left-0 bg-black z-3000" bind:this={el}
+  <canvas
+    class="size-full absolute top-0 left-0 bg-black z-3000"
+    bind:this={el}
   ></canvas>
 {/if}

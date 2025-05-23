@@ -1,4 +1,4 @@
-import { uplink } from '../uplink/client'
+import { uplink } from '../../back/uplink/client'
 import type { Box } from './box'
 import {
   type Frame,

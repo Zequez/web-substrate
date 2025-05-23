@@ -25,6 +25,11 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noPropertyAccessFromIndexSignature": false,
+
+    "paths": {
+      "@/*": ["./front/*"],
+      "@@/*": ["./land/*"]
+    }
   },
   "exclude": ["node_modules"]
 }

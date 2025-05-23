@@ -1,4 +1,4 @@
-import { name } from './package.json'
+import { name } from '../package.json'
 
 function stringToPort(str: string): number {
   let hash = 0
