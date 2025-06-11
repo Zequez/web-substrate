@@ -6,7 +6,12 @@ import {
   type Meta,
   type FrameBody,
 } from './lands-types'
-import { rootFrame, getLeaf, moveLeaf, removeLeaf } from './lands-loader'
+import {
+  rooterFrame as rootFrame,
+  getLeaf,
+  moveLeaf,
+  removeLeaf,
+} from './lands-loader'
 import { getContext, setContext } from 'svelte'
 
 type LandsStoreConfig = {}

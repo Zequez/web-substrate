@@ -7,6 +7,14 @@ import {
 } from './lands-types'
 import Empty from '../ui/Empty.svelte'
 
+// TODO:
+// Gotta use code generator in order to optimize this because I suspect the tree shaking
+// wont pick up the fact that we're just using the land root and discarding everything else
+
+const landRoot = LAND_ROOT
+
+console.log('LAND ROOT', landRoot)
+
 const svelteCompiledFiles = import.meta.glob('@@/**/*.svelte', {
   eager: true,
 })
@@ -171,4 +179,8 @@ function walkLandsImports() {
 
 walkLandsImports()
 
-export { rootFrame }
+console.log(rootFrame.inner)
+
+const rooterFrame = landRoot ? rootFrame.inner[landRoot] : rootFrame
+
+export { rootFrame, rooterFrame }

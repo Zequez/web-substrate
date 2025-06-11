@@ -26,10 +26,17 @@
     "noUnusedParameters": false,
     "noPropertyAccessFromIndexSignature": false,
 
+
+
     "paths": {
       "@/*": ["./front/*"],
       "@@/*": ["./land/*"]
     }
   },
+  "include": [
+    "front",
+    "land",
+    "back"
+  ],
   "exclude": ["node_modules"]
 }

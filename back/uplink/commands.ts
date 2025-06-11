@@ -156,15 +156,15 @@ async function removeFrameComponent(name: string) {
 }
 
 async function checkGit(landName: string) {
-  const landPath = join(LAND_ROOT, landName)
-  const gitPath = join(landPath, '.git')
-  return await exists(gitPath)
+  // const landPath = join(LAND_ROOT, landName)
+  // const gitPath = join(landPath, '.git')
+  // return await exists(gitPath)
 }
 
 async function initGit(landName: string) {
   const landPath = join(LAND_ROOT, landName)
   await Bun.$`cd ${landPath} && git init`
-  return true
+  // return true
 }
 
 async function pushGit(landName: string) {

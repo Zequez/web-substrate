@@ -25,13 +25,15 @@
 {/snippet}
 
 <div class="flex flex-col h-full w-full">
-  <div class="flex h6 flex-shrink-0 bg-gray-200 b-b b-green-700">
-    {@render trail('Root', 0)}
+  {#if !LAND_ROOT}
+    <div class="flex h6 flex-shrink-0 bg-gray-200 b-b b-green-700">
+      {@render trail('Root', 0)}
 
-    {#each landNav.path as p, i}
-      {@render trail(p, i + 1)}
-    {/each}
-  </div>
+      {#each landNav.path as p, i}
+        {@render trail(p, i + 1)}
+      {/each}
+    </div>
+  {/if}
   <div class="flex flex-grow">
     {#key landNav.path.join('/')}
       <Land at={landNav.path.join('/')} />
